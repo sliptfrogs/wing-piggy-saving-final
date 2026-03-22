@@ -47,7 +47,7 @@ export default function CreatePiggy() {
     const isValid = name.trim().length > 0 && !isNaN(target) && target > 0;
 
     return (
-        <div className="px-6 xl:px-8 py-6 xl:py-8 max-w-[1400px] space-y-6">
+        <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
 
             {/* Back */}
             <button

@@ -64,7 +64,7 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="px-6 xl:px-8 py-6 xl:py-8 space-y-8 max-w-[1400px]">
+        <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
 
             {/* Greeting + notification */}
             <div className="flex items-center justify-between">
