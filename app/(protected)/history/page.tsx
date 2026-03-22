@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUpRight, ArrowDownLeft, Users, Heart, RotateCcw,
   Percent, Hammer, Filter, ArrowUpDown, ShieldCheck,
-  TrendingUp, TrendingDown, Search, X
+  TrendingUp, TrendingDown, Search, X, ChevronDown, Calendar
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -64,6 +66,7 @@ export default function TransactionHistory() {
   const [sortKey,     setSortKey]     = useState<SortKey>('date-desc');
   const [filterType,  setFilterType]  = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const filtered = useMemo(() => {
     let list = filterType === 'all'
@@ -98,17 +101,39 @@ export default function TransactionHistory() {
     return map;
   }, [filtered]);
 
-  return (
-    <div className="px-6 xl:px-8 py-6 xl:py-8 max-w-[1400px] space-y-6">
+  const activeFiltersCount = (filterType !== 'all' ? 1 : 0) + (searchQuery ? 1 : 0);
 
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Transaction History</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{mockTransactions.length} total transactions</p>
+  return (
+    <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
+
+      {/* Header with mobile filter button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Transaction History</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{mockTransactions.length} total transactions</p>
+        </div>
+
+        {/* Mobile filter button */}
+        <div className="flex gap-2 sm:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {activeFiltersCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                {activeFiltersCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Summary cards - responsive grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total In',  value: formatCurrency(summary.totalIn),  icon: TrendingUp,   color: 'bg-success/10 text-success'   },
           { label: 'Total Out', value: formatCurrency(summary.totalOut), icon: TrendingDown, color: 'bg-destructive/10 text-destructive' },
@@ -120,23 +145,25 @@ export default function TransactionHistory() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 * i }}
-            className="glass rounded-2xl p-4"
+            className="glass rounded-xl sm:rounded-2xl p-3 sm:p-4"
           >
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${color}`}>
-              <Icon className="w-3.5 h-3.5" />
+            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center mb-1 sm:mb-2 ${color}`}>
+              <Icon className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
             </div>
-            <p className="text-lg font-display font-bold text-foreground">{value}</p>
+            <p className="text-base sm:text-lg font-display font-bold text-foreground">{value}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
           </motion.div>
         ))}
       </div>
 
       {/* ── Main content ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 sm:gap-6">
 
-        {/* ── LEFT: filters sidebar ── */}
-        <aside className="xl:col-span-1 space-y-4">
-          <div className="glass rounded-2xl p-5 space-y-4">
+        {/* ── LEFT: filters sidebar (desktop) / mobile popover ── */}
+
+        {/* Desktop filters */}
+        <aside className="hidden lg:block lg:col-span-1 space-y-4">
+          <div className="glass rounded-2xl p-5 space-y-4 sticky top-24">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Filter & Sort</p>
 
             {/* Search */}
@@ -155,27 +182,30 @@ export default function TransactionHistory() {
               )}
             </div>
 
-            {/* Type filter chips */}
+            {/* Type filter dropdown */}
             <div className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">Type</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(['all', ...Object.keys(typeConfig)] as FilterType[]).map(type => (
-                  <button
-                    key={type}
-                    onClick={() => setFilterType(type)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                      filterType === type
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                    }`}
-                  >
-                    {type === 'all' ? 'All' : typeConfig[type]?.label}
-                  </button>
-                ))}
-              </div>
+              <p className="text-xs text-muted-foreground">Transaction Type</p>
+              <Select value={filterType} onValueChange={v => setFilterType(v as FilterType)}>
+                <SelectTrigger className="w-full bg-secondary border-border text-foreground">
+                  <SelectValue placeholder="All transactions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Transactions</SelectItem>
+                  {Object.entries(typeConfig).map(([type, cfg]) => (
+                    <SelectItem key={type} value={type}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-5 h-5 rounded flex items-center justify-center ${cfg.color}`}>
+                          <cfg.icon className="w-3 h-3" />
+                        </div>
+                        {cfg.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Sort */}
+            {/* Sort dropdown */}
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">Sort by</p>
               <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
@@ -192,7 +222,7 @@ export default function TransactionHistory() {
               </Select>
             </div>
 
-            {/* Clear */}
+            {/* Clear filters */}
             {(filterType !== 'all' || searchQuery) && (
               <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => { setFilterType('all'); setSearchQuery(''); }}>
                 <X className="w-3.5 h-3.5 mr-1.5" /> Clear Filters
@@ -201,10 +231,85 @@ export default function TransactionHistory() {
           </div>
         </aside>
 
+        {/* Mobile filters popover */}
+        <AnimatePresence>
+          {mobileFiltersOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="lg:hidden fixed inset-x-0 top-0 z-50 p-4 bg-background/95 backdrop-blur-lg border-b border-border"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-foreground">Filters</h3>
+                <button onClick={() => setMobileFiltersOpen(false)} className="p-1 rounded-lg hover:bg-secondary">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+               
+
+                {/* Type filter dropdown */}
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Transaction Type</p>
+                  <Select value={filterType} onValueChange={v => setFilterType(v as FilterType)}>
+                    <SelectTrigger className="w-full bg-secondary border-border text-foreground">
+                      <SelectValue placeholder="All transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Transactions</SelectItem>
+                      {Object.entries(typeConfig).map(([type, cfg]) => (
+                        <SelectItem key={type} value={type}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-5 h-5 rounded flex items-center justify-center ${cfg.color}`}>
+                              <cfg.icon className="w-3 h-3" />
+                            </div>
+                            {cfg.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Sort dropdown */}
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Sort by</p>
+                  <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
+                    <SelectTrigger className="h-9 text-xs bg-secondary border-border text-foreground">
+                      <ArrowUpDown className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date-desc">Newest First</SelectItem>
+                      <SelectItem value="date-asc">Oldest First</SelectItem>
+                      <SelectItem value="amount-desc">Highest Amount</SelectItem>
+                      <SelectItem value="amount-asc">Lowest Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  variant="hero"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setMobileFiltersOpen(false)}
+                >
+                  Apply Filters
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ── RIGHT: transaction list ── */}
-        <div className="xl:col-span-3">
+        <div className="lg:col-span-3">
           {filtered.length === 0 ? (
-            <div className="glass rounded-2xl p-12 text-center">
+            <div className="glass rounded-2xl p-8 sm:p-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
+                <Search className="w-6 h-6 text-muted-foreground" />
+              </div>
               <p className="text-muted-foreground text-sm">
                 {filterType !== 'all' || searchQuery ? 'No transactions match your filters' : 'No transactions yet'}
               </p>
@@ -215,17 +320,18 @@ export default function TransactionHistory() {
               )}
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               {Array.from(grouped.entries()).map(([date, txs]) => (
                 <div key={date}>
                   {/* Date group header */}
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3 mb-2 sm:mb-3">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest whitespace-nowrap">{date}</p>
                     <div className="flex-1 h-px bg-border" />
                     <span className="text-xs text-muted-foreground shrink-0">{txs.length} tx</span>
                   </div>
 
-                  <div className="glass rounded-2xl overflow-hidden divide-y divide-border">
+                  <div className="space-y-2">
                     {txs.map((tx, i) => {
                       const cfg     = typeConfig[tx.type] || typeConfig.transfer;
                       const Icon    = cfg.icon;
@@ -237,40 +343,40 @@ export default function TransactionHistory() {
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.02 * Math.min(i, 10) }}
-                          className="flex items-center gap-4 px-4 py-3.5 hover:bg-secondary/40 transition-colors cursor-pointer"
+                          className="glass rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:bg-secondary/40 transition-all cursor-pointer"
                         >
-                          {/* Icon */}
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${cfg.color}`}>
-                            <Icon className="w-4 h-4" />
-                          </div>
-
-                          {/* Description */}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{tx.description || cfg.label}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                tx.status === 'completed' ? 'bg-success/10 text-success' :
-                                tx.status === 'reversed'  ? 'bg-destructive/10 text-destructive' :
-                                'bg-secondary text-muted-foreground'
-                              }`}>
-                                {tx.status}
-                              </span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
-                                typeConfig[tx.type]?.color ?? 'bg-secondary text-muted-foreground'
-                              }`}>
-                                {cfg.label}
-                              </span>
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            {/* Icon */}
+                            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 ${cfg.color}`}>
+                              <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                             </div>
-                          </div>
 
-                          {/* Amount */}
-                          <div className="text-right shrink-0">
-                            <p className={`text-sm font-bold tabular-nums ${isCredit ? 'text-success' : 'text-foreground'}`}>
-                              {isCredit ? '+' : '−'}{formatCurrency(tx.amount)}
-                            </p>
+                            {/* Description */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{tx.description || cfg.label}</p>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  tx.status === 'completed' ? 'bg-success/10 text-success' :
+                                  tx.status === 'reversed'  ? 'bg-destructive/10 text-destructive' :
+                                  'bg-secondary text-muted-foreground'
+                                }`}>
+                                  {tx.status}
+                                </span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-secondary/50 text-muted-foreground">
+                                  {cfg.label}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Amount */}
+                            <div className="text-right shrink-0">
+                              <p className={`text-sm sm:text-base font-bold tabular-nums ${isCredit ? 'text-success' : 'text-foreground'}`}>
+                                {isCredit ? '+' : '−'}{formatCurrency(tx.amount)}
+                              </p>
+                            </div>
                           </div>
                         </motion.div>
                       );
