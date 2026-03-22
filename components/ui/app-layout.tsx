@@ -99,17 +99,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Optional bottom section (user info / notifications) */}
           <div className="px-3 py-4 border-t !rounded-none  border-border">
-            <button
-              onClick={() => router.push('/notifications')}
-              className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="text-sm font-medium">Notifications</span>
-              {unreadCount > 0 && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
+            <button onClick={() => router.push('/notifications')} className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
+              <div className="relative w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
+              </div>
             </button>
           </div>
         </div>
@@ -149,12 +143,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {/* Notification bell – visible on all screens */}
             <button
               onClick={() => router.push('/notifications')}
-              className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
+              className="relative rounded-lg hover:bg-secondary transition-colors"
             >
-              <button className="relative w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              {/* FIX: inner button replaced with div to avoid nesting */}
+              <div className="relative w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
-              </button>
+              </div>
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                   {unreadCount}

@@ -72,7 +72,7 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground">{greeting},</p>
                     <h1 className="text-2xl font-display font-bold text-foreground">{mockProfile.full_name} 👋</h1>
                 </div>
-               
+
             </div>
 
             {/* Row 1: Balance card + stat cards */}
@@ -142,7 +142,7 @@ export default function Dashboard() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.06 * i }}
                             onClick={() => router.push(path)}
-                            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-card border border-border hover:border-primary/40 hover:shadow-sm transition-all group"
+                            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-card border border-border hover:border-primary/40 hover:shadow-sm transition-all group  w-full sm:w-auto"
                         >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color} group-hover:scale-105 transition-transform`}>
                                 <Icon className="w-4 h-4" />
