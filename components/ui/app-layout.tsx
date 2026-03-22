@@ -151,7 +151,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               onClick={() => router.push('/notifications')}
               className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
             >
-              <Bell className="w-5 h-5 text-muted-foreground" />
+              <button className="relative w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
+              </button>
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                   {unreadCount}
@@ -185,8 +188,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 key={path}
                 onClick={() => router.push(path)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${isActive(path)
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 <Icon className="w-5 h-5" />
@@ -199,8 +202,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <button
                 onClick={() => router.push('/qr')}
                 className={`w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-glow transition-transform active:scale-95 ${pathname === '/qr'
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                    : ''
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                  : ''
                   }`}
               >
                 <ScanLine className="w-6 h-6 text-primary-foreground" />
@@ -213,8 +216,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 key={path}
                 onClick={() => router.push(path)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${isActive(path)
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 <Icon className="w-5 h-5" />
