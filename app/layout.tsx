@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Geist } from "next/font/google";
 import "./globals.css";
+import "./antd/dist/reset.css"
 import { cn } from "@/lib/utils";
 
 // You may already have fonts; adjust as needed
