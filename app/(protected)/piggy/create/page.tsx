@@ -29,10 +29,10 @@ const presetAmounts = [500, 1000, 2500, 5000, 10000];
 const presetGoals = [
     { label: 'Vacation', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500}/>, amount: 2000, tagline: 'Travel & leisure' },
     { label: 'New Laptop', emoji: <Image src="https://ipowerresale.com/cdn/shop/files/media_31b63b50-d45b-406a-8a4d-77f6c3baf8f5.png?v=1766098577" alt='Description' width={600} height={500}/>, amount: 1500, tagline: 'Tech upgrade' },
-    { label: 'Emergency Fund', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500}/>, amount: 5000, tagline: 'Peace of mind' },
-    { label: 'Car', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500}/>, amount: 15000, tagline: 'Hit the road' },
-    { label: 'Wedding', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500}/>, amount: 10000, tagline: 'Big day' },
-    { label: 'Custom', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500}/>, amount: 0, tagline: 'Your own goal' },
+    { label: 'Emergency Fund', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/021/827/100/small/emergency-ambulance-car-medical-vehicle-illustration-png.png" alt='Description' width={600} height={600}/>, amount: 5000, tagline: 'Peace of mind' },
+    { label: 'Car', emoji: <Image src="https://www.bmw-m.com/content/dam/bmw/marketBMW_M/www_bmw-m_com/all-models/model-navigation/bmw-m3-competition-sedan-m-xdrive-lci-flyout.png" alt='Description' width={600} height={500}/>, amount: 15000, tagline: 'Hit the road' },
+    { label: 'Wedding', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/042/383/882/small/groom-and-bride-wedding-characters-png.png" alt='Description' width={600} height={500}/>, amount: 10000, tagline: 'Big day' },
+    { label: 'Custom', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/020/696/226/small/3d-minimal-money-saving-concept-depositing-money-collecting-money-for-retirement-salary-management-concept-wallet-with-a-money-bag-and-a-pile-of-money-3d-illustration-png.png" alt='Description' width={600} height={500}/>, amount: 0, tagline: 'Your own goal' },
 ];
 
 const interestRate = (days: number | null) =>

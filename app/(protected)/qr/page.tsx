@@ -34,10 +34,8 @@ const mockMainBalance = 1250.50;
 
 function parseQRData(raw: string): QRPayload | null {
     const trimmed = raw.trim();
-    // demo shortcuts
     if (trimmed === 'demo-p2p') return { type: 'main', name: 'Jane Smith', userId: 'user-jane' };
     if (trimmed === 'demo-piggy') return { type: 'piggy', name: 'Vacation Fund', piggyId: 'goal-2' };
-    // try JSON fallback
     try {
         const data = JSON.parse(trimmed) as QRPayload;
         if (data.type && (data.userId || data.piggyId)) return data;
@@ -105,7 +103,6 @@ export default function QRScanner() {
                     }
                 },
                 (errorMessage) => {
-                    // Silently ignore non-QR frames
                     if (errorMessage.includes('No QR code found')) return;
                     console.debug(errorMessage);
                 }
@@ -128,14 +125,12 @@ export default function QRScanner() {
         setUploadError(null);
         setUploading(true);
 
-        // Check file type
         if (!file.type.startsWith('image/')) {
             setUploadError('Please upload an image file');
             setUploading(false);
             return;
         }
 
-        // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             setUploadError('Image size should be less than 5MB');
             setUploading(false);
@@ -143,14 +138,10 @@ export default function QRScanner() {
         }
 
         try {
-            // Create preview URL
             const imageUrl = URL.createObjectURL(file);
             setUploadedImage(imageUrl);
 
-            // Initialize HTML5 QR Code scanner for image
             const html5Qrcode = new Html5Qrcode('qr-upload-reader');
-
-            // Decode QR from image
             const decodedText = await html5Qrcode.scanFile(file, false);
 
             const data = parseQRData(decodedText);
@@ -167,7 +158,6 @@ export default function QRScanner() {
             setUploadedImage(null);
         } finally {
             setUploading(false);
-            // Clear file input
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
@@ -199,7 +189,7 @@ export default function QRScanner() {
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
 
-            {/* Header with gradient accent */}
+            {/* Header */}
             <div className="relative">
                 <div className="absolute -top-4 -right-4 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
                 <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground flex items-center gap-2">
@@ -210,11 +200,8 @@ export default function QRScanner() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                 {/* ── LEFT: scanner + form ── */}
-                <div className="lg:col-span-3 space-y-4">
-
-                    {/* Mode toggle — hide when QR already parsed */}
+                <div className="lg:col-span-2 space-y-4">
                     {!parsedQR && (
                         <div className="flex gap-3">
                             {([
@@ -242,29 +229,31 @@ export default function QRScanner() {
                     )}
 
                     <AnimatePresence mode="wait">
-                        {/* ── Camera mode ── */}
+                        {/* Camera mode – redesigned like Wing Bank */}
+                        {/* Camera mode – clean viewfinder with a single cutout */}
+                        {/* Camera mode – clean viewfinder, no green borders */}
                         {scanMode === 'camera' && !parsedQR && (
                             <motion.div
                                 key="camera"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
-                                className="glass rounded-2xl p-5 sm:p-6 space-y-4"
+                                className=" rounded-2xl p-5 border-none sm:p-6 space-y-5"
                             >
-                                {/* Scanner container */}
-                                <div className="relative">
+                                <div className="relative flex justify-center">
+                                    {/* Scanner container */}
                                     <div
                                         id={scannerContainerId}
-                                        className={cn(
-                                            "rounded-xl overflow-hidden bg-black/5 w-full transition-all",
-                                            scanning && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                        )}
-                                        style={{ minHeight: 300 }}
+                                        className="w-full max-w-xs mx-auto rounded-2xl overflow-hidden  transition-all"
+                                        style={{ aspectRatio: '1 / 1' }}
                                     />
+                                    {/* Overlay and viewfinder when scanning */}
+
+                                    {/* Placeholder when camera is off */}
                                     {!scanning && !cameraError && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-xl">
-                                            <div className="text-center space-y-3">
-                                                <Camera className="w-12 h-12 text-muted-foreground mx-auto" />
+                                        <div className="absolute inset-0 border flex items-center justify-center  rounded-2xl">
+                                            <div className="text-center ">
+                                                <Camera className="w-10 h-10 text-muted-foreground mx-auto" />
                                                 <p className="text-sm text-muted-foreground">Camera is off</p>
                                             </div>
                                         </div>
@@ -280,32 +269,28 @@ export default function QRScanner() {
                                 )}
 
                                 {/* Camera controls */}
-                                <div className="flex gap-3">
+                                <div className="flex gap-3 justify-center">
                                     {!scanning ? (
-                                        <Button variant="hero" className="flex-1 gap-2" onClick={startScanner}>
+                                        <Button variant="hero" className="gap-2" onClick={startScanner}>
                                             <Camera className="w-4 h-4" /> Start Camera
                                         </Button>
                                     ) : (
                                         <>
-                                            <Button variant="outline" className="flex-1 gap-2" onClick={stopScanner}>
+                                            <Button variant="outline" className="gap-2" onClick={stopScanner}>
                                                 <X className="w-4 h-4" /> Stop
                                             </Button>
-                                            <Button variant="outline" className="flex-1 gap-2" onClick={startScanner}>
+                                            <Button variant="outline" className="gap-2" onClick={startScanner}>
                                                 <RefreshCw className="w-4 h-4" /> Restart
                                             </Button>
                                         </>
                                     )}
                                 </div>
 
-                                {/* Tips */}
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
-                                    <Shield className="w-3 h-3" />
-                                    <span>Point camera at a Piggywise QR code</span>
-                                </div>
+
                             </motion.div>
                         )}
 
-                        {/* ── Upload mode ── */}
+                        {/* Upload mode (unchanged) */}
                         {scanMode === 'upload' && !parsedQR && (
                             <motion.div
                                 key="upload"
@@ -319,8 +304,6 @@ export default function QRScanner() {
                                         <ImageIcon className="w-4 h-4 text-primary" />
                                         Upload QR Code Image
                                     </Label>
-
-                                    {/* Hidden file input */}
                                     <input
                                         ref={fileInputRef}
                                         type="file"
@@ -329,8 +312,6 @@ export default function QRScanner() {
                                         className="hidden"
                                         id="qr-upload"
                                     />
-
-                                    {/* Upload area */}
                                     <div
                                         onClick={() => fileInputRef.current?.click()}
                                         className={cn(
@@ -356,20 +337,14 @@ export default function QRScanner() {
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Hidden QR reader container for file scanning */}
                                     <div id="qr-upload-reader" className="hidden" />
                                 </div>
-
-                                {/* Error messages */}
                                 {uploadError && (
                                     <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
                                         <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                                         <span className="text-destructive text-sm">{uploadError}</span>
                                     </div>
                                 )}
-
-                                {/* Demo shortcuts */}
                                 <div className="space-y-2">
                                     <p className="text-xs text-muted-foreground text-center">Or try demo QR data:</p>
                                     <div className="flex flex-wrap gap-2 justify-center">
@@ -391,7 +366,7 @@ export default function QRScanner() {
                             </motion.div>
                         )}
 
-                        {/* ── Transfer form (after QR parsed) ── */}
+                        {/* Transfer form (unchanged) */}
                         {parsedQR && (
                             <motion.div
                                 key="transfer"
@@ -471,7 +446,6 @@ export default function QRScanner() {
                                         )}
                                     </div>
 
-                                    {/* Quick amount buttons */}
                                     <div className="flex flex-wrap gap-2">
                                         {[10, 25, 50, 100].map(quickAmount => (
                                             <button
@@ -511,6 +485,72 @@ export default function QRScanner() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+                </div>
+
+                {/* ── RIGHT: balance + summary + tips (unchanged) ── */}
+                <div className="lg:col-span-1 space-y-4">
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="glass rounded-2xl p-5 gradient-hero border border-primary/20"
+                    >
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Available Balance</p>
+                        <p className="text-3xl font-display font-bold text-foreground">{formatCurrency(mockMainBalance)}</p>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> Main Account · USD
+                        </p>
+                    </motion.div>
+
+                    <div className="glass rounded-2xl p-5 space-y-3">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                            <Sparkles className="w-3 h-3" />
+                            Transfer Summary
+                        </p>
+                        <div className="space-y-2.5">
+                            {[
+                                { label: 'Recipient', value: parsedQR?.name || '—', icon: User },
+                                { label: 'Type', value: parsedQR ? (parsedQR.type === 'main' ? 'P2P Transfer' : 'Piggy Contribution') : '—', icon: parsedQR?.type === 'main' ? User : PiggyBank },
+                                { label: 'Amount', value: isValidAmount ? formatCurrency(amt) : '—', icon: DollarSign },
+                            ].map(({ label, value, icon: Icon }) => (
+                                <div key={label} className="flex items-center justify-between py-1">
+                                    <div className="flex items-center gap-2">
+                                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">{label}</span>
+                                    </div>
+                                    <span className="text-sm font-semibold text-foreground">{value}</span>
+                                </div>
+                            ))}
+                            {isValidAmount && parsedQR && (
+                                <div className="border-t border-border pt-2.5 mt-1 flex items-center justify-between">
+                                    <span className="text-sm font-medium text-foreground">Total to send</span>
+                                    <span className="text-lg font-bold text-primary">{formatCurrency(amt)}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="glass rounded-2xl p-5 space-y-3">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                            <Info className="w-3 h-3" />
+                            How it works
+                        </p>
+                        <div className="space-y-3">
+                            {[
+                                { step: '1', text: 'Scan camera or upload QR image', icon: ScanLine },
+                                { step: '2', text: 'Enter the amount you want to send', icon: DollarSign },
+                                { step: '3', text: 'Confirm — funds transfer instantly', icon: Zap },
+                            ].map(({ step, text, icon: Icon }) => (
+                                <div key={step} className="flex items-start gap-3 group">
+                                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-110 transition-transform">
+                                        {step}
+                                    </div>
+                                    <Icon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
