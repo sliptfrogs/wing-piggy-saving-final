@@ -8,18 +8,13 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from '@/app/hooks/use-toast';
+
 import { signIn, useSession } from 'next-auth/react';
 import { useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { LoginFormData, loginSchema } from '@/lib/zod/login-schema';
 
 
-// Define Zod schema for login
-const loginSchema = z.object({
-    email: z.string().email('Please enter a valid email address'),
-    password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
     const router = useRouter();
@@ -30,7 +25,6 @@ export default function LoginPage() {
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
     });
-
     const { data: session, status } = useSession();
 
     useEffect(() => {

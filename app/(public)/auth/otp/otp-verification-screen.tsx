@@ -7,7 +7,8 @@ import { KeyRound, RefreshCw } from 'lucide-react';
 // import PinInput from './PinInput';
 
 import OTPInput from '@/components/ui/otp-input';
-import { toast } from '@/app/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
+
 
 interface OTPVerificationScreenProps {
     /** Called when OTP is successfully verified */

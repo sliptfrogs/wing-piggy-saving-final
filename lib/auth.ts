@@ -25,14 +25,12 @@ async function refreshAccessToken(token: AuthToken) {
 
     const data = await res.json();
 
-    if (!res.ok || data.status !== "SUCCESS") throw new Error("Refresh failed");
-
     return {
       ...token,
-      accessToken: data.data.access_token,
-      refreshToken: data.data.refresh_token ?? token.refreshToken,
-      roles: data.data.role,
-      accessTokenExpires: Date.now() + data.data.access_token_expires_in * 1000,
+      accessToken: data.data?.access_token,
+      refreshToken: data.data?.refresh_token ?? token.refreshToken,
+      roles: data.data?.role,
+      accessTokenExpires: Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
     };
   } catch (error) {
     console.error("Refresh token error:", error);

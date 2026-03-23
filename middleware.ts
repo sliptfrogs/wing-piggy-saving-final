@@ -8,7 +8,7 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    console.log("Token from getToken:", token); // debug
+    // console.log("Token from getToken:", token); // debug
 
     if (
       token &&
@@ -16,11 +16,11 @@ export default withAuth(
         pathname === "/auth/sign-up" ||
         pathname === "/auth/otp")
     ) {
-      console.log(
-        "Redirecting authenticated user from",
-        pathname,
-        "to /dashboard",
-      );
+      // console.log(
+      //   "Redirecting authenticated user from",
+      //   pathname,
+      //   "to /dashboard",
+      // );
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -30,7 +30,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
-        console.log("Authorized check for:", pathname, "Token:", !!token);
+        // console.log("Authorized check for:", pathname, "Token:", !!token);
         // Allow public pages without token
         if (
           pathname === "/auth/sign-in" ||

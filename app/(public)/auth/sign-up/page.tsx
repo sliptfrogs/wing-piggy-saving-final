@@ -7,18 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Mail, Phone, Lock, User, Loader2 } from 'lucide-react';
-import { toast } from '@/app/hooks/use-toast'; // adjust path as needed
+
 import Link from 'next/link';
+import { toast } from '@/hooks/use-toast';
+import { RegisterFormData, registerSchema } from '@/lib/zod/register-schema';
 
-// Define Zod schema for validation
-const registerSchema = z.object({
-    full_name: z.string().min(2, 'Full name must be at least 2 characters'),
-    email: z.string().email('Please enter a valid email address'),
-    phone_number: z.string().min(9, 'Phone number must be at least 9 digits'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
     const router = useRouter();

@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log("Registration request body:", body); // ✅ Log incoming data
 
     const res = await fetch(`${process.env.API_BASE_URL}/auth/register`, {
       method: "POST",
@@ -11,9 +10,7 @@ export async function POST(req: Request) {
       body: JSON.stringify(body),
     });
 
-    console.log("Backend response status:", res.status);
     const data = await res.json();
-    console.log("Backend response data:", data);
 
     if (!res.ok || data.status !== "PENDING") {
       return NextResponse.json(
