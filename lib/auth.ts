@@ -16,7 +16,7 @@ interface AuthUser {
 // 🔹 Refresh token function
 async function refreshAccessToken(token: AuthToken) {
   try {
-    const res = await fetch(`${process.env.NEXTAUTH_URL}/auth/refresh-token`, {
+    const res = await fetch(`${process.env.API_BASE_URL}/auth/refresh-token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken: token.refreshToken }),
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password)
           throw new Error("Missing credentials");
 
-        const res = await fetch(`${process.env.NEXTAUTH_URL}/auth/login`, {
+        const res = await fetch(`${process.env.API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

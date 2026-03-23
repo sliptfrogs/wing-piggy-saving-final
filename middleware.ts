@@ -1,27 +1,41 @@
+// middleware.ts
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-// This function runs for every request that matches the matcher below
 export default withAuth(
   function middleware(req) {
-    // Optional: custom logic before authentication check
-    // For example, you could log the request or allow public routes
+    const { pathname } = req.nextUrl;
+    const token = req.nextauth.token;
+
+
+    if (token && (pathname === "/auth/sign-in" || pathname === "/auth/sign-up")) {
+      console.log("Redirecting authenticated user from", pathname, "to /dashboard");
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
     return NextResponse.next();
   },
   {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl;
+        console.log("Authorized check for:", pathname, "Token:", !!token);
+
+        // Allow public auth pages without token
+        if (pathname === "/auth/sign-in" || pathname === "/auth/sign-up") {
+          return true;
+        }
+
+        // All other routes require token
+        return !!token;
+      },
+    },
     pages: {
-      signIn: "/auth/sign-in",  // 👈 must match your custom login page
+      signIn: "/auth/sign-in",
     },
   }
 );
 
-// Specify which routes this middleware should run on
 export const config = {
-  matcher: [
-    // Protect all dashboard routes and any other private routes
-    "/dashboard/:path*",
-    "/profile/:path*",
-    "/settings/:path*",
-    // Add more protected paths as needed
-  ],
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
 };

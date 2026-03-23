@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,6 +14,7 @@ import {
   History,
   LogOut,
 } from 'lucide-react';
+import { LogoutConfirmDialog } from './logout-confirm-dialog';
 
 // Navigation items used in both mobile bottom nav and desktop sidebar
 const mainNavItems = [
@@ -33,6 +34,8 @@ const secondaryNavItems = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
 
   // Mock notifications – replace with real hook when ready
   // const { data: notifications } = useNotifications();
@@ -40,7 +43,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const unreadCount = 0; // placeholder
 
   const isActive = (path: string) => pathname === path;
-  
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
@@ -100,24 +103,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </nav>
 
           {/* Optional bottom section (user info / notifications) */}
-          <div className="px-3 py-4 border-t !rounded-none border-border">
-            <button
-              onClick={async () => {
-                // Show confirmation dialog
-                const confirmed = window.confirm('Are you sure you want to logout?');
-                if (confirmed) {
-                  // Clear any stored auth data
-                  localStorage.removeItem('auth-token');
-                  sessionStorage.clear();
-                  // Redirect to login page
-                  router.push('/login');
-                }
-              }}
-              className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-destructive/10 hover:text-destructive group"
-            >
-              <LogOut className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
-              <span className="text-sm font-medium">Logout</span>
-            </button>
+          <div>
+            <div className="px-3 py-4 border-t !rounded-none border-border">
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-destructive/10 hover:text-destructive group"
+              >
+                <LogOut className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
+                <span className="text-sm font-medium">Logout</span>
+              </button>
+            </div>
+
+            <LogoutConfirmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
           </div>
         </div>
       </aside>
