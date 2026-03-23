@@ -1,3 +1,4 @@
+// lib/auth.ts
 import { AuthToken } from "@/app/types/auth-token";
 import NextAuth, { Session, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -41,6 +42,7 @@ async function refreshAccessToken(token: AuthToken) {
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    // 1. Email/Password login
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -80,16 +82,55 @@ export const authOptions: NextAuthOptions = {
         return authUser;
       },
     }),
+
+    // 2. OTP verification (after registration)
+    CredentialsProvider({
+      id: "otp",
+      name: "OTP",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        otpCode: { label: "OTP Code", type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.otpCode)
+          throw new Error("Missing email or OTP code");
+
+        const res = await fetch(`${process.env.API_BASE_URL}/auth/verify-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: credentials.email,
+            otpCode: credentials.otpCode,
+          }),
+        });
+
+        const response = await res.json();
+
+        if (!res.ok || response.status !== "SUCCESS")
+          throw new Error(response.message || "OTP verification failed");
+
+        const user = response.data;
+
+        return {
+          id: user.user_id,
+          email: user.email,
+          accessToken: user.access_token,
+          refreshToken: user.refresh_token,
+          tokenType: user.token_type,
+          roles: user.role,
+          accessTokenExpires: Date.now() + user.access_token_expires_in * 1000,
+        };
+      },
+    }),
   ],
 
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  pages: { signIn: "/auth/sign-in" }, // ✅ corrected path
 
   callbacks: {
     async jwt({ token, user }): Promise<AuthToken> {
-      // First login: user exists
       if (user) {
-        const authUser = user as AuthToken; // cast to AuthToken
+        const authUser = user as AuthToken;
         return {
           ...token,
           id: authUser.id,
@@ -101,12 +142,10 @@ export const authOptions: NextAuthOptions = {
         };
       }
 
-      // Token still valid
       if (Date.now() < (token.accessTokenExpires as number)) {
         return token as AuthToken;
       }
 
-      // Token expired → refresh
       return await refreshAccessToken(token as AuthToken);
     },
 
@@ -127,5 +166,4 @@ export const authOptions: NextAuthOptions = {
 };
 
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };

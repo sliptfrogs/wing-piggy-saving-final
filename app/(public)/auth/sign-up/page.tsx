@@ -31,6 +31,8 @@ export default function RegisterPage() {
     });
 
     const onSubmit = async (data: RegisterFormData) => {
+        console.log('Data: ', data);
+
         try {
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
@@ -40,21 +42,17 @@ export default function RegisterPage() {
 
             const result = await response.json();
 
-            if (response.ok) {
+            if (response.ok && result.status === 'PENDING') {
                 toast({
                     title: 'Register created.',
                     description: "Account created! Please verify your email.",
                     variant: 'destructive',
                 });
                 // Redirect to OTP page with the email
-                router.push(`/otp?email=${encodeURIComponent(data.email)}`);
+                router.push(`/auth/otp?email=${encodeURIComponent(data.email)}`);
             } else {
                 // Show error from API (if provided)
                 const errorMsg = result.message || 'Registration failed. Please try again.';
-
-
-
-
 
                 toast({
                     title: 'Register failed.',

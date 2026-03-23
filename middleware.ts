@@ -10,8 +10,17 @@ export default withAuth(
 
     console.log("Token from getToken:", token); // debug
 
-    if (token && (pathname === "/auth/sign-in" || pathname === "/auth/sign-up")) {
-      console.log("Redirecting authenticated user from", pathname, "to /dashboard");
+    if (
+      token &&
+      (pathname === "/auth/sign-in" ||
+        pathname === "/auth/sign-up" ||
+        pathname === "/auth/otp")
+    ) {
+      console.log(
+        "Redirecting authenticated user from",
+        pathname,
+        "to /dashboard",
+      );
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -22,16 +31,22 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         console.log("Authorized check for:", pathname, "Token:", !!token);
-        if (pathname === "/auth/sign-in" || pathname === "/auth/sign-up") {
+        // Allow public pages without token
+        if (
+          pathname === "/auth/sign-in" ||
+          pathname === "/auth/sign-up" ||
+          pathname === "/auth/otp" // ✅ added
+        ) {
           return true;
         }
+        // All other routes require a token
         return !!token;
       },
     },
     pages: {
       signIn: "/auth/sign-in",
     },
-  }
+  },
 );
 
 export const config = {
