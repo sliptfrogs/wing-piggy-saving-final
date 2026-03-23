@@ -1,12 +1,14 @@
 // middleware.ts
+import { getToken } from "next-auth/jwt";
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const { pathname } = req.nextUrl;
-    const token = req.nextauth.token;
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
+    console.log("Token from getToken:", token); // debug
 
     if (token && (pathname === "/auth/sign-in" || pathname === "/auth/sign-up")) {
       console.log("Redirecting authenticated user from", pathname, "to /dashboard");
@@ -20,13 +22,9 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         console.log("Authorized check for:", pathname, "Token:", !!token);
-
-        // Allow public auth pages without token
         if (pathname === "/auth/sign-in" || pathname === "/auth/sign-up") {
           return true;
         }
-
-        // All other routes require token
         return !!token;
       },
     },
