@@ -1,30 +1,29 @@
 "use client";
 
-import AppLayout from "@/components/ui/app-layout";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import AppLayout from "@/components/ui/app-layout";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-//   const { user, loading: authLoading } = useAuth();
-//   const { hasPin, isLocked, loading: pinLoading } = usePin();
+  const { data: session, status } = useSession();
+
   const router = useRouter();
 
-//   useEffect(() => {
-//     if (!authLoading && !user) {
-//       router.replace("/login");
-//     }
-//   }, [user, authLoading, router]);
+  // Check authentication
+  useEffect(() => {
+    if (status !== "loading" && !session) {
+      router.replace("/login");
+    }
+  }, [session, status, router]);
 
-//   if (authLoading || pinLoading) {
-//     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-//   }
 
-//   if (!user) return null; // will redirect
 
-//   // PIN handling
-//   if (!hasPin) return <PinSetupScreen />;
-//   if (isLocked) return <PinLockScreen />;
+  // If not authenticated, don't render anything (redirect will happen)
+  if (!session) return null;
 
-  // ✅ Wrap the children with AppLayout
+  // PIN handling
+
+  // Authenticated and PIN verified – render the layout with children
   return <AppLayout>{children}</AppLayout>;
 }

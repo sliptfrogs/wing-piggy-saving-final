@@ -3,6 +3,7 @@ import { Inter, Playfair_Display, Geist } from "next/font/google";
 import "./globals.css";
 import "./antd/dist/reset.css"
 import { cn } from "@/lib/utils";
+import Providers from "./providers";
 
 // You may already have fonts; adjust as needed
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cn(inter.variable, playfair.variable, geist.variable)}>
       <body className="bg-background text-foreground antialiased">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

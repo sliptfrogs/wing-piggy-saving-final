@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-popover": "^1.1.15",
@@ -25,13 +26,16 @@
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.577.0",
     "next": "16.2.1",
+    "next-auth": "^4.24.13",
     "next-themes": "^0.4.6",
     "qrcode.react": "^4.2.0",
     "react": "19.2.4",
     "react-day-picker": "^9.14.0",
     "react-dom": "19.2.4",
+    "react-hook-form": "^7.72.0",
     "select": "^1.1.2",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20",
