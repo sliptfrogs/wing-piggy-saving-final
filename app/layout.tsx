@@ -4,6 +4,8 @@ import "./globals.css";
 import "./antd/dist/reset.css"
 import { cn } from "@/lib/utils";
 import Providers from "./providers";
+import { ToastProvider } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/toaster";
 
 // You may already have fonts; adjust as needed
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -21,7 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={cn(inter.variable, playfair.variable, geist.variable)}>
       <body className="bg-background text-foreground antialiased">
         <Providers>
-          {children}
+          <ToastProvider>
+            {children}
+            <Toaster />
+          </ToastProvider>
         </Providers>
       </body>
     </html>

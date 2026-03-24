@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
     main: '/accounts/my-accounts/MAIN',
     list: '/accounts',
     list_piggys: '/accounts/piggy-account',
+    byNumber: '/accounts'
   },
   piggy: {
     list: '/piggy',

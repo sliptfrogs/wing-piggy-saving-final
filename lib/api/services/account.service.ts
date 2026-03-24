@@ -44,4 +44,18 @@ export const accountService = {
     }
     return accounts;
   },
+  getAccountByNumber: async (
+    token: string,
+    accountNumber: string,
+  ): Promise<Account> => {
+    const account = await apiClient.get<Account>(
+      `${API_ENDPOINTS.account.byNumber}/${accountNumber}`,
+      { requiresAuth: true },
+    );
+
+    if (!account) {
+      throw new Error("Account not found or private");
+    }
+    return account;
+  },
 };
