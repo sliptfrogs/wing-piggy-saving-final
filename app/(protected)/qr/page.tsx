@@ -4,66 +4,58 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Html5Qrcode } from 'html5-qrcode';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    PiggyBank, Camera, Upload, X, User, QrCode, ArrowRight,
+    PiggyBank, Camera, Upload, X, User, ArrowRight,
     CheckCircle2, Info, AlertCircle, ScanLine, DollarSign,
     RefreshCw, Sparkles, Shield, Zap, Image as ImageIcon, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTransfer } from '@/hooks/api/useTransfer';
 
 function formatCurrency(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type QRPayload = {
-    type: 'main' | 'piggy';
-    name?: string;
-    userId?: string;
-    piggyId?: string;
-    exp?: number;
-};
-
-// ── Static mock ───────────────────────────────────────────────────────────────
-
-const mockMainBalance = 1250.50;
-
-function parseQRData(raw: string): QRPayload | null {
-    const trimmed = raw.trim();
-    if (trimmed === 'demo-p2p') return { type: 'main', name: 'Jane Smith', userId: 'user-jane' };
-    if (trimmed === 'demo-piggy') return { type: 'piggy', name: 'Vacation Fund', piggyId: 'goal-2' };
+// Decode base64 to extract recipient info for display (only for UI)
+function getRecipientDisplay(base64: string): { type: string; accountNumber: string } {
     try {
-        const data = JSON.parse(trimmed) as QRPayload;
-        if (data.type && (data.userId || data.piggyId)) return data;
-    } catch { }
-    return null;
+        const decoded = atob(base64);
+        const data = JSON.parse(decoded);
+        const type = data.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer';
+        const accountNumber = data.recipient_account_number || '';
+        return { type, accountNumber };
+    } catch {
+        return { type: 'Unknown', accountNumber: '' };
+    }
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function QRScanner() {
     const router = useRouter();
+    const { data: session } = useSession();
     const [scanMode, setScanMode] = useState<'camera' | 'upload'>('camera');
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [parsedQR, setParsedQR] = useState<QRPayload | null>(null);
+    const [qrBase64, setQrBase64] = useState<string | null>(null);
+    const [recipientInfo, setRecipientInfo] = useState<{ type: string; accountNumber: string } | null>(null);
     const [amount, setAmount] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [notes, setNotes] = useState('');
+    const [transferError, setTransferError] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
 
+    // Use the mutation hook
+    const { mutate: transfer, isPending: isTransferring } = useTransfer();
+
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const scannedRef = useRef(false);
     const scannerContainerId = 'qr-reader';
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    
 
     const stopScanner = useCallback(async () => {
         if (scannerRef.current) {
@@ -97,10 +89,13 @@ export default function QRScanner() {
                 },
                 async (decodedText) => {
                     if (scannedRef.current) return;
-                    const data = parseQRData(decodedText);
-                    if (data) {
+                    // decodedText is the raw base64 string
+                    if (decodedText && decodedText.length > 0) {
                         scannedRef.current = true;
-                        setParsedQR(data);
+                        setQrBase64(decodedText);
+                        // Decode only for UI display
+                        const info = getRecipientDisplay(decodedText);
+                        setRecipientInfo(info);
                         await stopScanner();
                     }
                 },
@@ -146,9 +141,10 @@ export default function QRScanner() {
             const html5Qrcode = new Html5Qrcode('qr-upload-reader');
             const decodedText = await html5Qrcode.scanFile(file, false);
 
-            const data = parseQRData(decodedText);
-            if (data) {
-                setParsedQR(data);
+            if (decodedText && decodedText.length > 0) {
+                setQrBase64(decodedText);
+                const info = getRecipientDisplay(decodedText);
+                setRecipientInfo(info);
                 setUploadError(null);
             } else {
                 setUploadError('No valid QR code found in the image');
@@ -168,30 +164,44 @@ export default function QRScanner() {
 
     const handleTransfer = (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            resetState();
-            router.push('/dashboard');
-        }, 900);
+        if (!qrBase64) return;
+
+        transfer(
+            {
+                qrBase64,
+                amount: parseFloat(amount),
+                notes,
+            },
+            {
+                onSuccess: () => {
+                    resetState();
+                    router.push('/dashboard?transfer=success');
+                },
+                onError: (err: any) => {
+                    setTransferError(err.message || 'Transfer failed. Please try again.');
+                },
+            }
+        );
     };
 
     const resetState = () => {
-        setParsedQR(null);
+        setQrBase64(null);
+        setRecipientInfo(null);
         setUploadedImage(null);
         setAmount('');
+        setNotes('');
         setCameraError(null);
         setPermissionDenied(false);
         setUploadError(null);
+        setTransferError(null);
     };
 
     const amt = parseFloat(amount);
-    const isValidAmount = !isNaN(amt) && amt > 0 && amt <= mockMainBalance;
+    const isValidAmount = !isNaN(amt) && amt > 0;
+    const mockMainBalance = 1250.50; // Replace with real balance later
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
-
-            {/* Header */}
             <div className="relative">
                 <div className="absolute -top-4 -right-4 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
                 <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground flex items-center gap-2">
@@ -202,9 +212,8 @@ export default function QRScanner() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* ── LEFT: scanner + form ── */}
                 <div className="lg:col-span-2 space-y-4">
-                    {!parsedQR && (
+                    {!qrBase64 && (
                         <div className="flex gap-3">
                             {([
                                 { mode: 'camera', icon: Camera, label: 'Camera Scan', desc: 'Use your camera' },
@@ -231,30 +240,23 @@ export default function QRScanner() {
                     )}
 
                     <AnimatePresence mode="wait">
-                        {/* Camera mode – redesigned like Wing Bank */}
-                        {/* Camera mode – clean viewfinder with a single cutout */}
-                        {/* Camera mode – clean viewfinder, no green borders */}
-                        {scanMode === 'camera' && !parsedQR && (
+                        {scanMode === 'camera' && !qrBase64 && (
                             <motion.div
                                 key="camera"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
-                                className=" rounded-2xl p-5 border-none sm:p-6 space-y-5"
+                                className="rounded-2xl p-5 border-none sm:p-6 space-y-5"
                             >
                                 <div className="relative flex justify-center">
-                                    {/* Scanner container */}
                                     <div
                                         id={scannerContainerId}
-                                        className="w-full max-w-xs mx-auto rounded-2xl overflow-hidden  transition-all"
+                                        className="w-full max-w-xs mx-auto rounded-2xl overflow-hidden transition-all"
                                         style={{ aspectRatio: '1 / 1' }}
                                     />
-                                    {/* Overlay and viewfinder when scanning */}
-
-                                    {/* Placeholder when camera is off */}
                                     {!scanning && !cameraError && (
-                                        <div className="absolute inset-0 border flex items-center justify-center  rounded-2xl">
-                                            <div className="text-center ">
+                                        <div className="absolute inset-0 border flex items-center justify-center rounded-2xl">
+                                            <div className="text-center">
                                                 <Camera className="w-10 h-10 text-muted-foreground mx-auto" />
                                                 <p className="text-sm text-muted-foreground">Camera is off</p>
                                             </div>
@@ -262,7 +264,6 @@ export default function QRScanner() {
                                     )}
                                 </div>
 
-                                {/* Error messages */}
                                 {cameraError && (
                                     <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
                                         <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
@@ -270,7 +271,6 @@ export default function QRScanner() {
                                     </div>
                                 )}
 
-                                {/* Camera controls */}
                                 <div className="flex gap-3 justify-center">
                                     {!scanning ? (
                                         <Button variant="hero" className="gap-2" onClick={startScanner}>
@@ -287,13 +287,10 @@ export default function QRScanner() {
                                         </>
                                     )}
                                 </div>
-
-
                             </motion.div>
                         )}
 
-                        {/* Upload mode (unchanged) */}
-                        {scanMode === 'upload' && !parsedQR && (
+                        {scanMode === 'upload' && !qrBase64 && (
                             <motion.div
                                 key="upload"
                                 initial={{ opacity: 0, y: 20 }}
@@ -347,29 +344,10 @@ export default function QRScanner() {
                                         <span className="text-destructive text-sm">{uploadError}</span>
                                     </div>
                                 )}
-                                <div className="space-y-2">
-                                    <p className="text-xs text-muted-foreground text-center">Or try demo QR data:</p>
-                                    <div className="flex flex-wrap gap-2 justify-center">
-                                        {['demo-p2p', 'demo-piggy'].map(v => (
-                                            <button
-                                                key={v}
-                                                type="button"
-                                                onClick={() => {
-                                                    const data = parseQRData(v);
-                                                    if (data) setParsedQR(data);
-                                                }}
-                                                className="px-3 py-1.5 rounded-lg text-xs font-mono border border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-primary transition-all"
-                                            >
-                                                {v}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
                             </motion.div>
                         )}
 
-                        {/* Transfer form (unchanged) */}
-                        {parsedQR && (
+                        {qrBase64 && recipientInfo && (
                             <motion.div
                                 key="transfer"
                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -396,16 +374,18 @@ export default function QRScanner() {
                                     <div className="flex items-center gap-4">
                                         <div className={cn(
                                             "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0",
-                                            parsedQR.type === 'main' ? "bg-primary/10" : "bg-accent/10"
+                                            recipientInfo.type === 'Piggy Goal' ? "bg-accent/10" : "bg-primary/10"
                                         )}>
-                                            {parsedQR.type === 'main'
-                                                ? <User className="w-6 h-6 text-primary" />
-                                                : <PiggyBank className="w-6 h-6 text-accent" />}
+                                            {recipientInfo.type === 'Piggy Goal'
+                                                ? <PiggyBank className="w-6 h-6 text-accent" />
+                                                : <User className="w-6 h-6 text-primary" />}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-semibold text-foreground text-lg">{parsedQR.name}</p>
+                                            <p className="font-semibold text-foreground text-lg">
+                                                {recipientInfo.type === 'Piggy Goal' ? 'Piggy Goal' : 'Account'}
+                                            </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {parsedQR.type === 'main' ? 'P2P Transfer' : 'Piggy Contribution'}
+                                                Account: {recipientInfo.accountNumber.slice(-6)}
                                             </p>
                                         </div>
                                         <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
@@ -448,6 +428,20 @@ export default function QRScanner() {
                                         )}
                                     </div>
 
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                                            <Info className="w-4 h-4 text-primary" />
+                                            Notes (optional)
+                                        </Label>
+                                        <Input
+                                            type="text"
+                                            placeholder="Add a note..."
+                                            value={notes}
+                                            onChange={(e) => setNotes(e.target.value)}
+                                            className="bg-secondary border-border"
+                                        />
+                                    </div>
+
                                     <div className="flex flex-wrap gap-2">
                                         {[10, 25, 50, 100].map(quickAmount => (
                                             <button
@@ -461,15 +455,22 @@ export default function QRScanner() {
                                         ))}
                                     </div>
 
+                                    {transferError && (
+                                        <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
+                                            <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                                            <span className="text-destructive text-sm">{transferError}</span>
+                                        </div>
+                                    )}
+
                                     <div className="flex gap-3 pt-2">
                                         <Button
                                             type="submit"
                                             variant="hero"
                                             size="lg"
                                             className="flex-1 gap-2"
-                                            disabled={!isValidAmount || loading}
+                                            disabled={!isValidAmount || isTransferring}
                                         >
-                                            {loading ? (
+                                            {isTransferring ? (
                                                 <>
                                                     <RefreshCw className="w-4 h-4 animate-spin" /> Processing...
                                                 </>
@@ -479,7 +480,12 @@ export default function QRScanner() {
                                                 </>
                                             )}
                                         </Button>
-                                        <Button type="button" variant="outline" onClick={resetState} disabled={loading}>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={resetState}
+                                            disabled={isTransferring}
+                                        >
                                             Cancel
                                         </Button>
                                     </div>
@@ -489,7 +495,6 @@ export default function QRScanner() {
                     </AnimatePresence>
                 </div>
 
-                {/* ── RIGHT: balance + summary + tips (unchanged) ── */}
                 <div className="lg:col-span-1 space-y-4">
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
@@ -504,33 +509,47 @@ export default function QRScanner() {
                         </p>
                     </motion.div>
 
-                    <div className="glass rounded-2xl p-5 space-y-3">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                            <Sparkles className="w-3 h-3" />
-                            Transfer Summary
-                        </p>
-                        <div className="space-y-2.5">
-                            {[
-                                { label: 'Recipient', value: parsedQR?.name || '—', icon: User },
-                                { label: 'Type', value: parsedQR ? (parsedQR.type === 'main' ? 'P2P Transfer' : 'Piggy Contribution') : '—', icon: parsedQR?.type === 'main' ? User : PiggyBank },
-                                { label: 'Amount', value: isValidAmount ? formatCurrency(amt) : '—', icon: DollarSign },
-                            ].map(({ label, value, icon: Icon }) => (
-                                <div key={label} className="flex items-center justify-between py-1">
+                    {qrBase64 && recipientInfo && (
+                        <div className="glass rounded-2xl p-5 space-y-3">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                <Sparkles className="w-3 h-3" />
+                                Transfer Summary
+                            </p>
+                            <div className="space-y-2.5">
+                                <div className="flex items-center justify-between py-1">
                                     <div className="flex items-center gap-2">
-                                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">{label}</span>
+                                        {recipientInfo.type === 'Piggy Goal' ? <PiggyBank className="w-3.5 h-3.5 text-muted-foreground" /> : <User className="w-3.5 h-3.5 text-muted-foreground" />}
+                                        <span className="text-sm text-muted-foreground">Recipient</span>
                                     </div>
-                                    <span className="text-sm font-semibold text-foreground">{value}</span>
+                                    <span className="text-sm font-semibold text-foreground">
+                                        {recipientInfo.type === 'Piggy Goal' ? 'Piggy Goal' : 'Account'} ({recipientInfo.accountNumber.slice(-6)})
+                                    </span>
                                 </div>
-                            ))}
-                            {isValidAmount && parsedQR && (
-                                <div className="border-t border-border pt-2.5 mt-1 flex items-center justify-between">
-                                    <span className="text-sm font-medium text-foreground">Total to send</span>
-                                    <span className="text-lg font-bold text-primary">{formatCurrency(amt)}</span>
+                                <div className="flex items-center justify-between py-1">
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">Amount</span>
+                                    </div>
+                                    <span className="text-sm font-semibold text-foreground">{isValidAmount ? formatCurrency(amt) : '—'}</span>
                                 </div>
-                            )}
+                                {notes && (
+                                    <div className="flex items-center justify-between py-1">
+                                        <div className="flex items-center gap-2">
+                                            <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                                            <span className="text-sm text-muted-foreground">Note</span>
+                                        </div>
+                                        <span className="text-sm text-foreground">{notes}</span>
+                                    </div>
+                                )}
+                                {isValidAmount && (
+                                    <div className="border-t border-border pt-2.5 mt-1 flex items-center justify-between">
+                                        <span className="text-sm font-medium text-foreground">Total to send</span>
+                                        <span className="text-lg font-bold text-primary">{formatCurrency(amt)}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="glass rounded-2xl p-5 space-y-3">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">

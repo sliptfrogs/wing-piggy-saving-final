@@ -27,38 +27,21 @@ export const accountService = {
     return accountListSchema.parse(data);
   },
   getListPiggyAccounts: async (token: string): Promise<PiggyAccountList> => {
-    try {
-      const data = await apiClient.get<unknown>(
-        API_ENDPOINTS.account.list_piggys,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+    const data = await apiClient.get<unknown>(
+      API_ENDPOINTS.account.list_piggys,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
 
-      console.log("Raw API response:", data);
-      console.log("Response type:", typeof data);
-      console.log("Is array?", Array.isArray(data));
+    console.log("Raw API response:", data);
+    const accounts = piggyAccountListSchema.parse(data); // data is the array from the API
 
-      // Try to parse and catch the error
-      try {
-        const accounts = piggyAccountListSchema.parse(data);
-        console.log("Parsed accounts:", accounts);
-
-        if (!accounts.length) {
-          throw new Error("No account found");
-        }
-        return accounts;
-      } catch (parseError) {
-        console.error("Zod parsing error:", parseError);
-        console.error("Error details:", JSON.stringify(parseError, null, 2));
-        throw new Error(`Data validation failed: ${parseError.message}`);
-      }
-    } catch (error) {
-      console.error("API request error:", error);
-      throw error;
+    // Return empty array instead of throwing
+    if (!accounts.length) {
+      console.log("No piggy accounts found");
+      return []; // <-- change this line
     }
+    return accounts;
   },
-  
 };

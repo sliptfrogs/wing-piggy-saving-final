@@ -10,7 +10,6 @@ import { useSession } from 'next-auth/react';
 import { useListPiggyAccounts } from '@/hooks/api/useAccount';
 import { useQRCode } from '@/hooks/api/useQr';
 
-
 type QRTarget = 'main' | 'piggy';
 
 // Mock main account (replace with real data later)
@@ -20,10 +19,6 @@ const mockMainAccount = {
   balance: 1250.50,
   currency: 'USD',
 };
-
-function encodeQRPayload(payload: object) {
-  return JSON.stringify(payload);
-}
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -43,28 +38,14 @@ export default function QRGenerator() {
     error: piggyError,
   } = useListPiggyAccounts();
 
-  // Fetch QR code image using TanStack Query
-  const {
-    data: qrImageUrl,
-    isLoading: qrLoading,
-    error: qrError,
-    refetch: refetchQR,
-  } = useQRCode(session.data?.accessToken);
-
-  // Cleanup object URL when component unmounts or URL changes
-  useEffect(() => {
-    return () => {
-      if (qrImageUrl) URL.revokeObjectURL(qrImageUrl);
-    };
-  }, [qrImageUrl]);
-
-  // ========== Transform API data ==========
+  // Transform API data
   const activeGoals = (piggyAccounts || []).map(account => ({
     id: account.piggy_goal_id,
     name: account.goal_name,
     target_amount: account.target_amount,
     user_id: account.user_id,
     balance: account.current_balance,
+    account_number: account.account_number, // needed for QR generation
   }));
 
   const selectedGoal = activeGoals.find(g => g.id === selectedGoalId);
@@ -73,29 +54,26 @@ export default function QRGenerator() {
     ? Math.round((goalBalance / selectedGoal.target_amount) * 100)
     : 0;
 
-  // ========== QR Data ==========
-  const getQRData = () => {
-    if (target === 'main') {
-      return encodeQRPayload({
-        type: 'main',
-        accountId: mockMainAccount.id,
-        userId: mockMainAccount.user_id,
-      });
-    }
-    if (selectedGoal) {
-      return encodeQRPayload({
-        type: 'piggy',
-        piggyId: selectedGoal.id,
-        userId: selectedGoal.user_id,
-        name: selectedGoal.name,
-      });
-    }
-    return '';
-  };
+  // Determine QR type and parameters
+  const qrType = target === 'main' ? 'p2p' : 'contribute';
+  const qrAccountNumber = target === 'piggy' ? selectedGoal?.account_number : undefined;
 
-  const qrData = getQRData();
+  // Fetch QR code image using TanStack Query
+  const {
+    data: qrImageUrl,
+    isLoading: qrLoading,
+    error: qrError,
+    refetch: refetchQR,
+  } = useQRCode(qrType, qrAccountNumber);
+
+  // Cleanup object URL when component unmounts or URL changes
+  useEffect(() => {
+    return () => {
+      if (qrImageUrl) URL.revokeObjectURL(qrImageUrl);
+    };
+  }, [qrImageUrl]);
+
   const showQR = target === 'main' || !!selectedGoal;
-  // Only render the QR code on the client (to avoid hydration mismatch)
   const shouldRenderQR = typeof window !== 'undefined' && showQR;
 
   const handleRefresh = () => {

@@ -1,21 +1,21 @@
 import { API_ENDPOINTS } from "../endpoints";
 
 export const qrService = {
-  /**
-   * Generate P2P QR code via proxy to avoid CORS
-   * @param token - Access token from session
-   * @returns Promise<Blob> - QR code image blob
-   */
-  generateQr: async (token: string): Promise<Blob> => {
-    const response = await fetch('/api/qr', {
+  generateQr: async (
+    token: string,
+    type: "p2p" | "contribute" | "ownTransfer" = "p2p",
+    accountNumber?: string,
+  ): Promise<Blob> => {
+    let url = `/api/qr?type=${type}`;
+    if ((type === "contribute" || type === "ownTransfer") && accountNumber) {
+      url += `&accountNumber=${encodeURIComponent(accountNumber)}`;
+    }
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error("Failed to fetch QR");
     return response.blob();
   },
 };
