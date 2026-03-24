@@ -121,13 +121,20 @@ export default function Transfer() {
         if (!canSubmit) return;
 
         if (type === 'p2p') {
+            if (!recipientData) {
+                toast({ title: 'Error', description: 'No recipient found', variant: 'destructive' });
+                return;
+            }
+
+            const recipientAccountNumber = recipientData.account_number;
+
             transferP2P(
-                { recipient_account_number: recipientData.account_number, amount: amt },
+                { recipient_account_number: recipientAccountNumber, amount: amt },
                 {
                     onSuccess: () => {
                         toast({
                             title: 'Transfer successful',
-                            description: `Sent ${formatCurrency(amt)} to account ${recipientData.account_number}`,
+                            description: `Sent ${formatCurrency(amt)} to account ${recipientAccountNumber}`,
                         });
                         router.push('/');
                     },
@@ -135,13 +142,27 @@ export default function Transfer() {
                 }
             );
         } else if (type === 'contribute') {
+            // TypeScript knows recipientData exists because canSubmit checked it
+            // Use non-null assertion or explicit check
+            if (!recipientData) {
+                toast({
+                    title: 'Error',
+                    description: 'No recipient found',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            const recipientAccountNumber = recipientData.account_number;
+            const recipientNumber = recipientData.account_number;
+
             transferContribute(
-                { recipient_account_number: recipientData.account_number, amount: amt, notes },
+                { recipient_account_number: recipientAccountNumber, amount: amt, notes },
                 {
                     onSuccess: () => {
                         toast({
                             title: 'Contribution successful',
-                            description: `Contributed ${formatCurrency(amt)} to account ${recipientData.account_number}${notes ? ` with note: "${notes}"` : ''}`,
+                            description: `Contributed ${formatCurrency(amt)} to account ${recipientNumber}${notes ? ` with note: "${notes}"` : ''}`,
                         });
                         router.push('/');
                     },
