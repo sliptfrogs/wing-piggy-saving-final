@@ -24,8 +24,10 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `/piggy/${id}`,
   },
   transaction: {
-    list: '/transactions',
-    create: '/transactions',
+    history: '/transactions/history',
+    byType: '/transactions/history/type',
+    byDateRange: '/transactions/history/date-range',
+    recent: '/transactions/history/recent',
   },
   qr: {
     generate: '/qr/generate/p2p-transfer-qr'
