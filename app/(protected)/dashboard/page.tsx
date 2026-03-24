@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { useAccountMain, useMainAccount } from '@/hooks/api/useAccount';
+import {  useMainAccount } from '@/hooks/api/useAccount';
 import { useSession } from 'next-auth/react';
 
 function formatCurrency(amount: number) {
@@ -25,8 +25,6 @@ function getTransactionIcon(type: string) {
         default: return <ArrowUpRight className="w-4 h-4" />;
     }
 }
-
-const mockProfile = { full_name: 'Alex Johnson' };
 
 const mockPiggyGoals = [
     { id: '1', name: 'New Laptop', target_amount: 1500, status: 'active', hide_balance: false, accounts: [{ balance: 890.25 }] },

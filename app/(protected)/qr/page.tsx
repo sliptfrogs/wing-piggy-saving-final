@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useTransfer } from '@/hooks/api/useTransfer';
 import { qrService } from '@/lib/api/services/qr.service';
 import { useToast } from '@/hooks/use-toast';
+import { useMainAccount } from '@/hooks/api/useAccount';
 
 // Zod schema for transfer form
 const transferSchema = z.object({
@@ -48,6 +49,7 @@ function getErrorMessage(error: unknown): string {
 
 export default function QRScanner() {
     const router = useRouter();
+    const { data: mainAccount, isLoading: mainAccountIsLoading, error: mainAccountError } = useMainAccount();
     const { data: session } = useSession();
     const { toast } = useToast();
 
@@ -605,18 +607,27 @@ export default function QRScanner() {
 
                 {/* Right panel – balance & summary (unchanged except adding form values) */}
                 <div className="lg:col-span-1 space-y-4">
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="glass rounded-2xl p-5 gradient-hero border border-primary/20"
-                    >
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Available Balance</p>
-                        <p className="text-3xl font-display font-bold text-foreground">{formatCurrency(mockMainBalance)}</p>
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <Shield className="w-3 h-3" /> Main Account · USD
-                        </p>
-                    </motion.div>
+                    {mainAccountIsLoading ? (
+                        <div className="w-full h-24 bg-secondary rounded-2xl animate-pulse" />
+                    ) : mainAccountError ? (
+                        <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
+                            <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                            <span className="text-destructive text-sm">Failed to load account balance</span>
+                        </div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="glass rounded-2xl p-5 gradient-hero border border-primary/20"
+                        >
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Available Balance</p>
+                            <p className="text-3xl font-display font-bold text-foreground">{formatCurrency(mainAccount?.current_balance ?? 0)}</p>
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Shield className="w-3 h-3" /> Main Account · USD
+                            </p>
+                        </motion.div>
+                    )}
 
                     {qrBase64 && recipientInfo && (
                         <div className="glass rounded-2xl p-5 space-y-3">
