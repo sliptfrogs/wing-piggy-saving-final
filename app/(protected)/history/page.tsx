@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowUpRight, ArrowDownLeft, Users, Heart, RotateCcw,
     Percent, Hammer, Filter, ArrowUpDown,
-    TrendingUp, TrendingDown, Search, X, Calendar, Loader2
+    TrendingUp, TrendingDown, Search, X, Calendar, Loader2,
+    RefreshCw
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ function mapApiTransaction(tx: ApiTransaction): UITransaction {
     const isCredit = tx.entry_type === 'CREDIT';
     const description = tx.metadata?.description ||
         (uiType === 'contribution' ? 'Contribution to Goal' :
-         uiType === 'p2p' ? 'P2P Transfer' : 'Transaction');
+            uiType === 'p2p' ? 'P2P Transfer' : 'Transaction');
 
     return {
         id: tx.transaction_id,
@@ -366,19 +367,56 @@ export default function TransactionHistory() {
                 {/* Transaction list */}
                 <div className="lg:col-span-4">
                     {filtered.length === 0 ? (
-                        <div className="glass rounded-2xl p-8 sm:p-12 text-center">
-                            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
-                                <Search className="w-6 h-6 text-muted-foreground" />
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-background to-secondary/5 border border-border/50 shadow-lg"
+                        >
+                            {/* Subtle grid pattern */}
+                            <div className="absolute inset-0 opacity-30">
+                                <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-border" />
+                                        </pattern>
+                                    </defs>
+                                    <rect width="100%" height="100%" fill="url(#grid)" />
+                                </svg>
                             </div>
-                            <p className="text-muted-foreground text-sm">
-                                {filterType !== 'all' || searchQuery ? 'No transactions match your filters' : 'No transactions yet'}
-                            </p>
-                            {(filterType !== 'all' || searchQuery) && (
-                                <Button variant="ghost" size="sm" className="mt-3 text-primary" onClick={() => { setFilterType('all'); setSearchQuery(''); }}>
-                                    Clear filters
-                                </Button>
-                            )}
-                        </div>
+
+                            <div className="relative z-10 px-6 py-12 sm:px-12 sm:py-16 text-center">
+                                {/* Icon container */}
+                                <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-secondary/20 backdrop-blur-sm flex items-center justify-center mb-5 border border-border/50 shadow-inner">
+                                    <Search className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground/60" strokeWidth={1.5} />
+                                </div>
+
+                                {/* Title */}
+                                <h3 className="text-xl sm:text-2xl font-medium tracking-tight text-foreground mb-2">
+                                    {filterType !== 'all' || searchQuery ? 'No results' : 'Your journey starts here'}
+                                </h3>
+
+                                {/* Description */}
+                                <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6 leading-relaxed">
+                                    {filterType !== 'all' || searchQuery
+                                        ? "We couldn't find any transactions matching your current filters. Try a different combination."
+                                        : "When you make a transfer or receive money, transactions will appear here."}
+                                </p>
+
+                                {/* Clear filters button (only when filters are active) */}
+                                {(filterType !== 'all' || searchQuery) && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => { setFilterType('all'); setSearchQuery(''); }}
+                                        className="group rounded-full px-6 border-primary/20 hover:border-primary/40 transition-colors duration-200"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                                        Clear filters
+                                    </Button>
+                                )}
+                            </div>
+                        </motion.div>
                     ) : (
                         <>
                             <div className="space-y-5 sm:space-y-6">
@@ -412,11 +450,10 @@ export default function TransactionHistory() {
                                                                     <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                                                                         {new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                                     </span>
-                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                                                        tx.status === 'completed' ? 'bg-success/10 text-success' :
+                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${tx.status === 'completed' ? 'bg-success/10 text-success' :
                                                                         tx.status === 'reversed' ? 'bg-destructive/10 text-destructive' :
-                                                                        'bg-secondary text-muted-foreground'
-                                                                    }`}>
+                                                                            'bg-secondary text-muted-foreground'
+                                                                        }`}>
                                                                         {tx.status}
                                                                     </span>
                                                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-secondary/50 text-muted-foreground">
