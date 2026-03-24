@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useSession } from 'next-auth/react';
@@ -15,47 +18,75 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransfer } from '@/hooks/api/useTransfer';
-import { qrService } from '@/lib/api/services/qr.service'; // <-- import the validation service
+import { qrService } from '@/lib/api/services/qr.service';
+import { useToast } from '@/hooks/use-toast';
+
+// Zod schema for transfer form
+const transferSchema = z.object({
+    amount: z.string()
+        .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+            message: 'Amount must be greater than 0',
+        })
+        .refine((val) => parseFloat(val) <= 1000000, { // optional upper limit
+            message: 'Amount is too high',
+        }),
+    notes: z.string().optional(),
+});
+
+type TransferFormValues = z.infer<typeof transferSchema>;
 
 function formatCurrency(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 }
 
-// Kept only for demo buttons (optional). The scanned QR will be validated on server.
-function getRecipientDisplay(base64: string): { type: string; accountNumber: string } {
-    try {
-        const decoded = atob(base64);
-        const data = JSON.parse(decoded);
-        const type = data.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer';
-        const accountNumber = data.recipient_account_number || '';
-        return { type, accountNumber };
-    } catch {
-        return { type: 'Unknown', accountNumber: '' };
-    }
+// Helper for error extraction
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    return 'An unknown error occurred';
 }
 
 export default function QRScanner() {
     const router = useRouter();
     const { data: session } = useSession();
+    const { toast } = useToast();
+
+    // UI state
     const [scanMode, setScanMode] = useState<'camera' | 'upload'>('camera');
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [qrBase64, setQrBase64] = useState<string | null>(null);
     const [recipientInfo, setRecipientInfo] = useState<{ type: string; accountNumber: string } | null>(null);
-    const [amount, setAmount] = useState('');
-    const [notes, setNotes] = useState('');
     const [transferError, setTransferError] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
-
-    // New states for validation
     const [validating, setValidating] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
 
     const { mutate: transfer, isPending: isTransferring } = useTransfer();
 
+    // Form handling
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+        reset: resetForm,
+    } = useForm<TransferFormValues>({
+        resolver: zodResolver(transferSchema),
+        defaultValues: { amount: '', notes: '' },
+    });
+
+    const amount = watch('amount');
+    const notes = watch('notes');
+    const amt = parseFloat(amount);
+    const isValidAmount = !isNaN(amt) && amt > 0;
+    const mockMainBalance = 1250.50; // Replace with real balance
+
+    // Refs for scanner
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const scannedRef = useRef(false);
     const scannerContainerId = 'qr-reader';
@@ -74,24 +105,26 @@ export default function QRScanner() {
 
     useEffect(() => () => { stopScanner(); }, [stopScanner]);
 
-    // Shared function to handle validation after QR extraction
+    // Validation function
     const validateAndProceed = async (decodedText: string) => {
         if (validating) return;
         setValidating(true);
         setValidationError(null);
         try {
-            const validation = await qrService.validateQR(session?.accessToken!, decodedText);
-            // Validation successful – store the QR data and recipient info
+            const token = session?.accessToken;
+            if (!token) throw new Error('No access token');
+            const validation = await qrService.validateQR(token, decodedText);
             setQrBase64(decodedText);
             setRecipientInfo({
                 type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
                 accountNumber: validation.recipientAccountNumber,
             });
-            await stopScanner(); // stop camera after successful scan
-        } catch (err: any) {
-            setValidationError(err.message || 'Invalid QR code');
-            // Reset scan flag so user can try another QR
-            scannedRef.current = false;
+            await stopScanner();
+            // Reset form when a new QR is scanned
+            resetForm({ amount: '', notes: '' });
+        } catch (err) {
+            setValidationError(getErrorMessage(err));
+            scannedRef.current = false; // allow another scan
         } finally {
             setValidating(false);
         }
@@ -115,7 +148,7 @@ export default function QRScanner() {
                     aspectRatio: 1.0,
                 },
                 async (decodedText) => {
-                    if (scannedRef.current || validating) return; // prevent double processing
+                    if (scannedRef.current || validating) return;
                     scannedRef.current = true;
                     await validateAndProceed(decodedText);
                 },
@@ -124,11 +157,15 @@ export default function QRScanner() {
                     console.debug(errorMessage);
                 }
             );
-        } catch (err: any) {
+        } catch (err: unknown) {
             setScanning(false);
-            if (err?.message?.includes('permission') || err?.name === 'NotAllowedError') {
-                setPermissionDenied(true);
-                setCameraError('Camera permission denied. Please allow camera access and try again.');
+            if (err instanceof Error) {
+                if (err.message.includes('permission') || err.name === 'NotAllowedError') {
+                    setPermissionDenied(true);
+                    setCameraError('Camera permission denied. Please allow camera access and try again.');
+                } else {
+                    setCameraError('Unable to start camera. Try upload mode below.');
+                }
             } else {
                 setCameraError('Unable to start camera. Try upload mode below.');
             }
@@ -162,19 +199,20 @@ export default function QRScanner() {
             const decodedText = await html5Qrcode.scanFile(file, false);
 
             if (decodedText && decodedText.length > 0) {
-                // Validate the QR before using it
                 setValidating(true);
                 setValidationError(null);
                 try {
-                    const validation = await qrService.validateQR(session?.accessToken!, decodedText);
+                    const accessToken = session?.accessToken;
+                    const validation = await qrService.validateQR(accessToken!, decodedText);
                     setQrBase64(decodedText);
                     setRecipientInfo({
                         type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
                         accountNumber: validation.recipientAccountNumber,
                     });
                     setUploadError(null);
-                } catch (err: any) {
-                    setValidationError(err.message || 'Invalid QR code');
+                    resetForm({ amount: '', notes: '' });
+                } catch (err) {
+                    setValidationError(getErrorMessage(err));
                     setUploadedImage(null);
                 } finally {
                     setValidating(false);
@@ -195,23 +233,32 @@ export default function QRScanner() {
         }
     };
 
-    const handleTransfer = (e: React.FormEvent) => {
-        e.preventDefault();
+    const onTransferSubmit = (data: TransferFormValues) => {
         if (!qrBase64) return;
 
         transfer(
             {
                 qrBase64,
-                amount: parseFloat(amount),
-                notes,
+                amount: parseFloat(data.amount),
+                notes: data.notes,
             },
             {
                 onSuccess: () => {
+                    toast({
+                        title: 'Transfer Successful',
+                        description: `Successfully sent ${formatCurrency(parseFloat(data.amount))} to ${recipientInfo?.type === 'Piggy Goal' ? 'piggy goal' : 'account'}.`,
+                        variant: 'default',
+                    });
                     resetState();
                     router.push('/dashboard?transfer=success');
                 },
-                onError: (err: any) => {
-                    setTransferError(err.message || 'Transfer failed. Please try again.');
+                onError: (err: unknown) => {
+                    setTransferError(getErrorMessage(err));
+                    toast({
+                        title: 'Transfer Failed',
+                        description: getErrorMessage(err),
+                        variant: 'destructive',
+                    });
                 },
             }
         );
@@ -221,19 +268,20 @@ export default function QRScanner() {
         setQrBase64(null);
         setRecipientInfo(null);
         setUploadedImage(null);
-        setAmount('');
-        setNotes('');
         setCameraError(null);
         setPermissionDenied(false);
         setUploadError(null);
         setTransferError(null);
         setValidationError(null);
+        resetForm({ amount: '', notes: '' });
     };
 
-    const amt = parseFloat(amount);
-    const isValidAmount = !isNaN(amt) && amt > 0;
-    const mockMainBalance = 1250.50; // Replace with real balance later
+    // Quick amount buttons
+    const setQuickAmount = (value: number) => {
+        setValue('amount', value.toString(), { shouldValidate: true });
+    };
 
+    // Render UI (same as before but with form integration)
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
             <div className="relative">
@@ -298,7 +346,6 @@ export default function QRScanner() {
                                     )}
                                 </div>
 
-                                {/* Camera error message */}
                                 {cameraError && (
                                     <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
                                         <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
@@ -306,7 +353,6 @@ export default function QRScanner() {
                                     </div>
                                 )}
 
-                                {/* Validation error after scan */}
                                 {validationError && !qrBase64 && (
                                     <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
                                         <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
@@ -314,7 +360,6 @@ export default function QRScanner() {
                                     </div>
                                 )}
 
-                                {/* Loading indicator while validating */}
                                 {validating && (
                                     <div className="flex justify-center py-2">
                                         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -418,7 +463,7 @@ export default function QRScanner() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="space-y-4"
                             >
-                                {/* Recipient card */}
+                                {/* Recipient card (unchanged) */}
                                 <div className="glass rounded-2xl p-5 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
                                     <div className="flex items-center justify-between mb-4">
@@ -455,8 +500,8 @@ export default function QRScanner() {
                                     </div>
                                 </div>
 
-                                {/* Amount form */}
-                                <form onSubmit={handleTransfer} className="glass rounded-2xl p-5 space-y-4">
+                                {/* Transfer form with validation */}
+                                <form onSubmit={handleSubmit(onTransferSubmit)} className="glass rounded-2xl p-5 space-y-4">
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                                             <DollarSign className="w-4 h-4 text-primary" />
@@ -467,15 +512,16 @@ export default function QRScanner() {
                                             <Input
                                                 type="number"
                                                 placeholder="0.00"
-                                                value={amount}
-                                                onChange={(e) => setAmount(e.target.value)}
+                                                {...register('amount')}
                                                 min="0.01"
                                                 step="0.01"
-                                                required
                                                 className="pl-10 bg-secondary border-border text-foreground text-2xl font-bold h-14"
                                             />
                                         </div>
-                                        {amount && (
+                                        {errors.amount && (
+                                            <p className="text-xs text-destructive">{errors.amount.message}</p>
+                                        )}
+                                        {amount && !errors.amount && (
                                             <motion.p
                                                 initial={{ opacity: 0, y: -5 }}
                                                 animate={{ opacity: 1, y: 0 }}
@@ -499,8 +545,7 @@ export default function QRScanner() {
                                         <Input
                                             type="text"
                                             placeholder="Add a note..."
-                                            value={notes}
-                                            onChange={(e) => setNotes(e.target.value)}
+                                            {...register('notes')}
                                             className="bg-secondary border-border"
                                         />
                                     </div>
@@ -510,7 +555,7 @@ export default function QRScanner() {
                                             <button
                                                 key={quickAmount}
                                                 type="button"
-                                                onClick={() => setAmount(quickAmount.toString())}
+                                                onClick={() => setQuickAmount(quickAmount)}
                                                 className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors"
                                             >
                                                 ${quickAmount}
@@ -531,7 +576,7 @@ export default function QRScanner() {
                                             variant="hero"
                                             size="lg"
                                             className="flex-1 gap-2"
-                                            disabled={!isValidAmount || isTransferring}
+                                            disabled={!isValidAmount || isTransferring || amt > mockMainBalance}
                                         >
                                             {isTransferring ? (
                                                 <>
@@ -558,6 +603,7 @@ export default function QRScanner() {
                     </AnimatePresence>
                 </div>
 
+                {/* Right panel – balance & summary (unchanged except adding form values) */}
                 <div className="lg:col-span-1 space-y-4">
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}

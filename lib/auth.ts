@@ -19,18 +19,28 @@ async function refreshAccessToken(token: AuthToken) {
   try {
     const res = await fetch(`${process.env.API_BASE_URL}/auth/refresh-token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: token.refreshToken }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.refreshToken}`, // ← send refresh token as Bearer
+      },
+      // body is empty or maybe still needed? Check backend. Usually refresh endpoint accepts no body.
+      // If your backend also expects an empty body, keep body: JSON.stringify({}).
+      body: JSON.stringify({}), // optional, depending on backend
     });
 
     const data = await res.json();
+  
+    if (!res.ok) {
+      throw new Error(data.message || "Refresh failed");
+    }
 
     return {
       ...token,
       accessToken: data.data?.access_token,
-      refreshToken: data.data?.refresh_token ?? token.refreshToken,
+      refreshToken: data.data?.refresh_token ?? token.refreshToken, // update if rotation
       roles: data.data?.role,
-      accessTokenExpires: Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
+      accessTokenExpires:
+        Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
     };
   } catch (error) {
     console.error("Refresh token error:", error);
