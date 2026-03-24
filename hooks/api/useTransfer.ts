@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { transferService } from "@/lib/api/services/transfer.service";
-import { P2PTransferRequest, P2PTransferResponse } from "@/types/P2P-transfer";
+import { P2PTransferRequest, P2PTransferResponse } from "@/types/p2p-transfer";
+import { ContributeTransferRequest } from "@/types/contribute-transfer";
 
 export const useTransfer = () => {
   const { data: session } = useSession();
@@ -50,3 +51,20 @@ export const useTransferByP2P = () => {
     },
   });
 };
+/**
+ * @method useTransferContribute
+ * @description Custom hook to handle contribution transfers. Uses React Query's useMutation to call the contributeTransfer API and invalidates relevant queries on success.
+ * @returns
+ */
+export const useTransferContribute = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: ContributeTransferRequest) => transferService.contributeTransfer(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['account'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        },
+    });
+};
+

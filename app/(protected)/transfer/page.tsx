@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ArrowUpRight, Users, PiggyBank, Heart, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Users, PiggyBank, Heart, CheckCircle2, ChevronRight, Loader2, Check, XCircle, X } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -15,9 +15,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useAccountLookup } from '@/hooks/api/useAccountLookup';
-import { useTransferByP2P } from '@/hooks/api/useTransfer'; // adjust path
+import { useTransferByP2P, useTransferContribute } from '@/hooks/api/useTransfer';
 import { toast } from '@/hooks/use-toast';
-
 
 function formatCurrency(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -25,7 +24,7 @@ function formatCurrency(n: number) {
 
 type TransferType = 'own-piggy' | 'p2p' | 'contribute';
 
-// ── Static mock data (still used for own piggy goals and balance) ──
+// Static mock data (still used for own piggy goals and balance)
 const mockMainBalance = 1250.50;
 const mockActiveGoals = [
     { id: '1', name: 'New Laptop', target_amount: 1500, accounts: [{ balance: 890.25 }] },
@@ -46,19 +45,22 @@ export default function Transfer() {
     const [selectedPiggy, setSelectedPiggy] = useState('');
     const [recipientAccountNumber, setRecipientAccountNumber] = useState('');
     const [searchAccountNumber, setSearchAccountNumber] = useState('');
-    const [selectedRecipientGoal, setSelectedRecipientGoal] = useState('');
+    const [notes, setNotes] = useState('');
 
-    // Recipient lookup
+    // Determine account type to look up based on transfer type
+    const accountTypeParam = type === 'p2p' ? 'MAIN' : type === 'contribute' ? 'PIGGY' : undefined;
+
+    // Recipient lookup – automatically disabled when type === 'own-piggy' because searchAccountNumber will be empty
     const {
         data: accountData,
         isLoading: accountLoading,
         error: accountError,
-    } = useAccountLookup(searchAccountNumber);
+    } = useAccountLookup(searchAccountNumber, accountTypeParam);
 
-    // P2P transfer mutation
+    // Mutations
     const { mutate: transferP2P, isPending: isP2PPending } = useTransferByP2P();
+    const { mutate: transferContribute, isPending: isContributePending } = useTransferContribute();
 
-    // For now, we'll treat the account as valid for P2P once data exists.
     const recipientData = accountData;
 
     const handleSearch = () => {
@@ -75,7 +77,7 @@ export default function Transfer() {
         setSelectedPiggy('');
         setRecipientAccountNumber('');
         setSearchAccountNumber('');
-        setSelectedRecipientGoal('');
+        setNotes('');
     };
 
     const amt = parseFloat(amount);
@@ -88,7 +90,7 @@ export default function Transfer() {
             : type === 'p2p'
                 ? !!recipientData && !accountError
                 : type === 'contribute'
-                    ? !!recipientData && !!selectedRecipientGoal && !accountError
+                    ? !!recipientData && !accountError
                     : false);
 
     const getRecipientDisplay = () => {
@@ -97,7 +99,7 @@ export default function Transfer() {
         } else if (type === 'p2p') {
             return recipientData?.account_number || '—';
         } else {
-            return selectedRecipientGoal ? 'Selected Goal' : '—';
+            return recipientData?.account_number || '—';
         }
     };
 
@@ -132,17 +134,34 @@ export default function Transfer() {
             toast({
                 title: 'Piggy transfer',
                 description: `Transfer of ${formatCurrency(amt)} to goal "${mockActiveGoals.find(g => g.id === selectedPiggy)?.name}" will be implemented soon.`,
-            })
+            });
         } else if (type === 'contribute') {
-            // TODO: Implement contribution transfer
-            toast({
-                title: 'Contribution transfer',
-                description: `Contribution of ${formatCurrency(amt)} to account ${recipientData?.account_number} will be implemented soon.`,
-            })
+            transferContribute(
+                {
+                    recipient_account_number: recipientData.account_number,
+                    amount: amt,
+                    notes,
+                },
+                {
+                    onSuccess: (data) => {
+                        toast({
+                            title: 'Contribution successful',
+                            description: `Contributed ${formatCurrency(amt)} to account ${recipientData.account_number}${notes ? ` with note: "${notes}"` : ''}`,
+                        });
+                        router.push('/');
+                    },
+                    onError: (error: any) => {
+                        toast({
+                            title: 'Contribution failed',
+                            description: `Failed to contribute ${formatCurrency(amt)} to account ${recipientData.account_number}`,
+                        });
+                    },
+                }
+            );
         }
     };
 
-    const isProcessing = isP2PPending; // only for P2P; extend for others
+    const isProcessing = isP2PPending || isContributePending;
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
@@ -182,7 +201,7 @@ export default function Transfer() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-                        {/* Recipient search (P2P & Contribute) */}
+                        {/* Recipient search (for P2P and Contribute) */}
                         <AnimatePresence mode="wait">
                             {(type === 'p2p' || type === 'contribute') && (
                                 <motion.div
@@ -211,23 +230,58 @@ export default function Transfer() {
                                         </Button>
                                     </div>
 
+                                    {/* Error from API */}
                                     {accountError && !accountLoading && searchAccountNumber && (
-                                        <p className="text-xs text-destructive mt-2">{accountError.message}</p>
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="mt-3 p-3 rounded-xl bg-destructive/5 border border-destructive/20 flex items-center gap-3"
+                                        >
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                                                <X className="w-4 h-4 text-destructive" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-destructive font-medium">Verification failed</p>
+                                                <p className="text-sm text-muted-foreground">{accountError.message}</p>
+                                            </div>
+                                        </motion.div>
                                     )}
 
+                                    {/* Success */}
                                     {accountData && (
                                         <motion.div
                                             initial={{ opacity: 0, y: 4 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="flex items-center gap-2 text-sm text-primary mt-2"
+                                            className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-3"
                                         >
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            Found: <span className="font-semibold">{accountData.account_number}</span>
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                                <Check className="w-4 h-4 text-primary" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-muted-foreground">Recipient account</p>
+                                                <p className="text-sm font-semibold text-foreground">{accountData.account_number}</p>
+                                            </div>
+                                            <div className="text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
+                                                Verified
+                                            </div>
                                         </motion.div>
                                     )}
 
-                                    {!accountData && !accountLoading && searchAccountNumber && (
-                                        <p className="text-xs text-muted-foreground mt-2">No account found — please check the number.</p>
+                                    {/* Fallback: no data and not loading and search attempted */}
+                                    {!accountData && !accountLoading && searchAccountNumber && !accountError && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="mt-3 p-3 rounded-xl bg-muted/20 border border-border flex items-center gap-3"
+                                        >
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+                                                <XCircle className="w-4 h-4 text-muted-foreground" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-muted-foreground font-medium">Account not found</p>
+                                                <p className="text-sm text-muted-foreground">Please check the account number and try again.</p>
+                                            </div>
+                                        </motion.div>
                                     )}
                                 </motion.div>
                             )}
@@ -265,31 +319,22 @@ export default function Transfer() {
                             )}
                         </AnimatePresence>
 
-                        {/* Contribute – recipient goal selector (placeholder) */}
+                        {/* Notes field for contribution (optional) */}
                         <AnimatePresence>
                             {type === 'contribute' && accountData && (
                                 <motion.div
-                                    key="contrib-goals"
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="glass rounded-2xl p-4 sm:p-5 space-y-3"
+                                    className="glass rounded-2xl p-4 sm:p-5 space-y-2"
                                 >
-                                    <Label className="text-sm font-medium text-foreground">Select Goal to Contribute</Label>
-                                    <div className="space-y-2">
-                                        <p className="text-xs text-muted-foreground">Goals will appear here (coming soon)</p>
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelectedRecipientGoal('demo')}
-                                            className="w-full text-left p-3 sm:p-4 rounded-xl border border-border bg-background hover:border-primary/20 flex items-center justify-between"
-                                        >
-                                            <div>
-                                                <p className="font-medium text-foreground text-sm">Demo Goal</p>
-                                                <p className="text-xs text-muted-foreground">Target: $1000</p>
-                                            </div>
-                                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                                        </button>
-                                    </div>
+                                    <Label className="text-sm font-medium text-foreground">Notes (optional)</Label>
+                                    <Input
+                                        placeholder="Add a personal message..."
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        className="bg-secondary border-border"
+                                    />
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -340,6 +385,12 @@ export default function Transfer() {
                                 <span className="text-sm text-muted-foreground">To</span>
                                 <span className="text-sm font-semibold text-foreground break-all text-right max-w-[60%]">{getRecipientDisplay()}</span>
                             </div>
+                            {type === 'contribute' && notes && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Note</span>
+                                    <span className="text-sm text-foreground break-all text-right max-w-[60%]">{notes}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Amount</span>
                                 <span className="text-sm font-semibold text-foreground">{isValidAmount ? formatCurrency(amt) : '—'}</span>
@@ -362,7 +413,7 @@ export default function Transfer() {
                                 ? 'Funds move instantly to your saving goal. You can withdraw anytime unless the goal is locked.'
                                 : type === 'p2p'
                                     ? 'Send money directly to another user\'s main account using their account number. They\'ll receive it instantly.'
-                                    : 'Support someone\'s saving goal directly by entering their account number. They\'ll be notified of your contribution.'}
+                                    : 'Support someone\'s saving goal directly by entering their piggy account number. They\'ll be notified of your contribution.'}
                         </p>
                     </div>
                 </div>

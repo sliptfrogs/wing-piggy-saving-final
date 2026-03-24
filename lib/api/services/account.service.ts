@@ -44,14 +44,19 @@ export const accountService = {
     }
     return accounts;
   },
-  getAccountByNumber: async (
+  getAccountByNumberAndType: async (
     token: string,
     accountNumber: string,
+    type?: string,
   ): Promise<Account> => {
-    const account = await apiClient.get<Account>(
-      `${API_ENDPOINTS.account.byNumber}/${accountNumber}`,
-      { requiresAuth: true },
-    );
+    // Build the URL with optional query parameter
+    let url = `${API_ENDPOINTS.account.byNumber}/${accountNumber}`;
+
+    if (type) {
+      url += `?type=${encodeURIComponent(type)}`;
+    }
+
+    const account = await apiClient.get<Account>(url, { requiresAuth: true });
 
     if (!account) {
       throw new Error("Account not found or private");

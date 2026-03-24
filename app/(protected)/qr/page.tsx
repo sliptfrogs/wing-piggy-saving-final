@@ -14,7 +14,9 @@ import { Label } from '@/components/ui/label';
 import {
     PiggyBank, Camera, Upload, X, User, ArrowRight,
     CheckCircle2, Info, AlertCircle, ScanLine, DollarSign,
-    RefreshCw, Sparkles, Shield, Zap, Image as ImageIcon, Loader2
+    RefreshCw, Sparkles, Shield, Zap, Image as ImageIcon, Loader2,
+    Check,
+    MoveUpRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransfer } from '@/hooks/api/useTransfer';
@@ -28,7 +30,7 @@ const transferSchema = z.object({
         .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
             message: 'Amount must be greater than 0',
         })
-        .refine((val) => parseFloat(val) <= 1000000, { // optional upper limit
+        .refine((val) => parseFloat(val) <= 1000000, {
             message: 'Amount is too high',
         }),
     notes: z.string().optional(),
@@ -40,7 +42,6 @@ function formatCurrency(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 }
 
-// Helper for error extraction
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
     if (typeof error === 'string') return error;
@@ -53,7 +54,6 @@ export default function QRScanner() {
     const { data: session } = useSession();
     const { toast } = useToast();
 
-    // UI state
     const [scanMode, setScanMode] = useState<'camera' | 'upload'>('camera');
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -69,7 +69,6 @@ export default function QRScanner() {
 
     const { mutate: transfer, isPending: isTransferring } = useTransfer();
 
-    // Form handling
     const {
         register,
         handleSubmit,
@@ -86,9 +85,7 @@ export default function QRScanner() {
     const notes = watch('notes');
     const amt = parseFloat(amount);
     const isValidAmount = !isNaN(amt) && amt > 0;
-    const mockMainBalance = 1250.50; // Replace with real balance
 
-    // Refs for scanner
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const scannedRef = useRef(false);
     const scannerContainerId = 'qr-reader';
@@ -107,7 +104,7 @@ export default function QRScanner() {
 
     useEffect(() => () => { stopScanner(); }, [stopScanner]);
 
-    // Validation function
+    // Shared validation function – also checks for self‑transfer
     const validateAndProceed = async (decodedText: string) => {
         if (validating) return;
         setValidating(true);
@@ -115,17 +112,32 @@ export default function QRScanner() {
         try {
             const token = session?.accessToken;
             if (!token) throw new Error('No access token');
+
             const validation = await qrService.validateQR(token, decodedText);
+
+            // Self‑transfer check: prevent sending to your own main account
+            if (mainAccount && validation.recipientAccountNumber === mainAccount.account_number) {
+                throw new Error('You cannot send money to your own account');
+            }
+
             setQrBase64(decodedText);
             setRecipientInfo({
                 type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
                 accountNumber: validation.recipientAccountNumber,
             });
             await stopScanner();
-            // Reset form when a new QR is scanned
             resetForm({ amount: '', notes: '' });
         } catch (err) {
-            setValidationError(getErrorMessage(err));
+            const msg = getErrorMessage(err);
+            setValidationError(msg);
+            // Show a toast for self‑transfer
+            if (msg.includes('cannot send money to your own account')) {
+                toast({
+                    title: 'Invalid QR',
+                    description: msg,
+                    variant: 'destructive',
+                });
+            }
             scannedRef.current = false; // allow another scan
         } finally {
             setValidating(false);
@@ -204,8 +216,15 @@ export default function QRScanner() {
                 setValidating(true);
                 setValidationError(null);
                 try {
-                    const accessToken = session?.accessToken;
-                    const validation = await qrService.validateQR(accessToken!, decodedText);
+                    const token = session?.accessToken;
+                    if (!token) throw new Error('No access token');
+                    const validation = await qrService.validateQR(token, decodedText);
+
+                    // Self‑transfer check
+                    if (mainAccount && validation.recipientAccountNumber === mainAccount.account_number) {
+                        throw new Error('You cannot send money to your own account');
+                    }
+
                     setQrBase64(decodedText);
                     setRecipientInfo({
                         type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
@@ -214,7 +233,15 @@ export default function QRScanner() {
                     setUploadError(null);
                     resetForm({ amount: '', notes: '' });
                 } catch (err) {
-                    setValidationError(getErrorMessage(err));
+                    const msg = getErrorMessage(err);
+                    setValidationError(msg);
+                    if (msg.includes('cannot send money to your own account')) {
+                        toast({
+                            title: 'Invalid QR',
+                            description: msg,
+                            variant: 'destructive',
+                        });
+                    }
                     setUploadedImage(null);
                 } finally {
                     setValidating(false);
@@ -278,12 +305,10 @@ export default function QRScanner() {
         resetForm({ amount: '', notes: '' });
     };
 
-    // Quick amount buttons
     const setQuickAmount = (value: number) => {
         setValue('amount', value.toString(), { shouldValidate: true });
     };
 
-    // Render UI (same as before but with form integration)
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
             <div className="relative">
@@ -465,12 +490,12 @@ export default function QRScanner() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="space-y-4"
                             >
-                                {/* Recipient card (unchanged) */}
+                                {/* Recipient card */}
                                 <div className="glass rounded-2xl p-5 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
                                     <div className="flex items-center justify-between mb-4">
                                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                            <Zap className="w-3 h-3" />
+                                            <MoveUpRight className="w-3 h-3" />
                                             Sending To
                                         </p>
                                         <button
@@ -498,11 +523,11 @@ export default function QRScanner() {
                                                 Account: {recipientInfo.accountNumber.slice(-6)}
                                             </p>
                                         </div>
-                                        <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
+                                        <Check className="w-6 h-6 text-primary shrink-0" />
                                     </div>
                                 </div>
 
-                                {/* Transfer form with validation */}
+                                {/* Transfer form */}
                                 <form onSubmit={handleSubmit(onTransferSubmit)} className="glass rounded-2xl p-5 space-y-4">
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -529,12 +554,12 @@ export default function QRScanner() {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 className={cn(
                                                     "text-xs font-medium",
-                                                    amt > mockMainBalance ? "text-destructive" : "text-muted-foreground"
+                                                    amt > (mainAccount?.current_balance || 0) ? "text-destructive" : "text-muted-foreground"
                                                 )}
                                             >
-                                                {amt > mockMainBalance
-                                                    ? `⚠️ Exceeds balance by ${formatCurrency(amt - mockMainBalance)}`
-                                                    : `✓ Remaining: ${formatCurrency(mockMainBalance - amt)}`}
+                                                {amt > (mainAccount?.current_balance || 0)
+                                                    ? `⚠️ Exceeds balance by ${formatCurrency(amt - (mainAccount?.current_balance || 0))}`
+                                                    : `✓ Remaining: ${formatCurrency((mainAccount?.current_balance || 0) - amt)}`}
                                             </motion.p>
                                         )}
                                     </div>
@@ -578,7 +603,7 @@ export default function QRScanner() {
                                             variant="hero"
                                             size="lg"
                                             className="flex-1 gap-2"
-                                            disabled={!isValidAmount || isTransferring || amt > mockMainBalance}
+                                            disabled={!isValidAmount || isTransferring || amt > (mainAccount?.current_balance || 0)}
                                         >
                                             {isTransferring ? (
                                                 <>
@@ -605,7 +630,7 @@ export default function QRScanner() {
                     </AnimatePresence>
                 </div>
 
-                {/* Right panel – balance & summary (unchanged except adding form values) */}
+                {/* Right panel – balance & summary */}
                 <div className="lg:col-span-1 space-y-4">
                     {mainAccountIsLoading ? (
                         <div className="w-full h-24 bg-secondary rounded-2xl animate-pulse" />

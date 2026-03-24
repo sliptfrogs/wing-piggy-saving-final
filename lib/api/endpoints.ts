@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
     generate: '/qr/generate/p2p-transfer-qr'
   },
   transfers: {
-    p2p: '/transfers/p2p'
+    p2p: '/transfers/p2p',
+    contribute: '/transfers/contribute'
   }
 } as const;

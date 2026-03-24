@@ -1,6 +1,11 @@
-import { P2PTransferRequest, P2PTransferResponse } from "@/types/P2P-transfer";
 import { API_ENDPOINTS } from "../endpoints";
 import { apiClient } from "../client";
+
+import {
+  ContributeTransferRequest,
+  ContributeTransferResponse,
+} from "@/types/contribute-transfer";
+import { P2PTransferRequest, P2PTransferResponse } from "@/types/p2p-transfer";
 
 export const transferService = {
   processQR: async (
@@ -30,6 +35,14 @@ export const transferService = {
   ): Promise<P2PTransferResponse> => {
     return apiClient.post<P2PTransferResponse>(
       API_ENDPOINTS.transfers.p2p,
+      data,
+    );
+  },
+  contributeTransfer: async (
+    data: ContributeTransferRequest,
+  ): Promise<ContributeTransferResponse> => {
+    return apiClient.post<ContributeTransferResponse>(
+      API_ENDPOINTS.transfers.contribute,
       data,
     );
   },

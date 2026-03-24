@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PiggyBank, Wallet, Download, Share2, RefreshCw, TrendingUp, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSession } from 'next-auth/react';
 import { useListPiggyAccounts, useMainAccount } from '@/hooks/api/useAccount';
 import { useQRCode } from '@/hooks/api/useQr';
 
