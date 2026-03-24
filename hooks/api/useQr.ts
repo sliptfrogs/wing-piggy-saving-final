@@ -1,4 +1,4 @@
-import { qrService } from '@/lib/api/services/qr-generator.service';
+import { qrService } from '@/lib/api/services/qr.service';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 

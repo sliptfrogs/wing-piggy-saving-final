@@ -1,3 +1,4 @@
+// lib/api/services/qr.service.ts
 import { API_ENDPOINTS } from "../endpoints";
 
 export const qrService = {
@@ -17,5 +18,19 @@ export const qrService = {
     });
     if (!response.ok) throw new Error("Failed to fetch QR");
     return response.blob();
+  },
+
+  // New method: validate QR code before proceeding to amount input
+  // lib/api/services/qr.service.ts (add this method)
+  validateQR: async (token: string, qrBase64: string) => {
+    const response = await fetch(
+      `/api/qr/validate?qrBase64=${encodeURIComponent(qrBase64)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Invalid QR code");
+    return data.data; // returns { type, recipientAccountNumber, expiresAt }
   },
 };

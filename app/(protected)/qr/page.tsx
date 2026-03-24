@@ -15,12 +15,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransfer } from '@/hooks/api/useTransfer';
+import { qrService } from '@/lib/api/services/qr.service'; // <-- import the validation service
 
 function formatCurrency(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 }
 
-// Decode base64 to extract recipient info for display (only for UI)
+// Kept only for demo buttons (optional). The scanned QR will be validated on server.
 function getRecipientDisplay(base64: string): { type: string; accountNumber: string } {
     try {
         const decoded = atob(base64);
@@ -49,7 +50,10 @@ export default function QRScanner() {
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
 
-    // Use the mutation hook
+    // New states for validation
+    const [validating, setValidating] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
+
     const { mutate: transfer, isPending: isTransferring } = useTransfer();
 
     const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -70,6 +74,29 @@ export default function QRScanner() {
 
     useEffect(() => () => { stopScanner(); }, [stopScanner]);
 
+    // Shared function to handle validation after QR extraction
+    const validateAndProceed = async (decodedText: string) => {
+        if (validating) return;
+        setValidating(true);
+        setValidationError(null);
+        try {
+            const validation = await qrService.validateQR(session?.accessToken!, decodedText);
+            // Validation successful – store the QR data and recipient info
+            setQrBase64(decodedText);
+            setRecipientInfo({
+                type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
+                accountNumber: validation.recipientAccountNumber,
+            });
+            await stopScanner(); // stop camera after successful scan
+        } catch (err: any) {
+            setValidationError(err.message || 'Invalid QR code');
+            // Reset scan flag so user can try another QR
+            scannedRef.current = false;
+        } finally {
+            setValidating(false);
+        }
+    };
+
     const startScanner = async () => {
         setCameraError(null);
         setPermissionDenied(false);
@@ -88,16 +115,9 @@ export default function QRScanner() {
                     aspectRatio: 1.0,
                 },
                 async (decodedText) => {
-                    if (scannedRef.current) return;
-                    // decodedText is the raw base64 string
-                    if (decodedText && decodedText.length > 0) {
-                        scannedRef.current = true;
-                        setQrBase64(decodedText);
-                        // Decode only for UI display
-                        const info = getRecipientDisplay(decodedText);
-                        setRecipientInfo(info);
-                        await stopScanner();
-                    }
+                    if (scannedRef.current || validating) return; // prevent double processing
+                    scannedRef.current = true;
+                    await validateAndProceed(decodedText);
                 },
                 (errorMessage) => {
                     if (errorMessage.includes('No QR code found')) return;
@@ -142,10 +162,23 @@ export default function QRScanner() {
             const decodedText = await html5Qrcode.scanFile(file, false);
 
             if (decodedText && decodedText.length > 0) {
-                setQrBase64(decodedText);
-                const info = getRecipientDisplay(decodedText);
-                setRecipientInfo(info);
-                setUploadError(null);
+                // Validate the QR before using it
+                setValidating(true);
+                setValidationError(null);
+                try {
+                    const validation = await qrService.validateQR(session?.accessToken!, decodedText);
+                    setQrBase64(decodedText);
+                    setRecipientInfo({
+                        type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
+                        accountNumber: validation.recipientAccountNumber,
+                    });
+                    setUploadError(null);
+                } catch (err: any) {
+                    setValidationError(err.message || 'Invalid QR code');
+                    setUploadedImage(null);
+                } finally {
+                    setValidating(false);
+                }
             } else {
                 setUploadError('No valid QR code found in the image');
                 setUploadedImage(null);
@@ -194,6 +227,7 @@ export default function QRScanner() {
         setPermissionDenied(false);
         setUploadError(null);
         setTransferError(null);
+        setValidationError(null);
     };
 
     const amt = parseFloat(amount);
@@ -221,7 +255,7 @@ export default function QRScanner() {
                             ] as const).map(({ mode, icon: Icon, label, desc }) => (
                                 <button
                                     key={mode}
-                                    onClick={() => { stopScanner(); setScanMode(mode); setCameraError(null); setPermissionDenied(false); setUploadError(null); }}
+                                    onClick={() => { stopScanner(); setScanMode(mode); setCameraError(null); setPermissionDenied(false); setUploadError(null); setValidationError(null); }}
                                     className={cn(
                                         "flex-1 flex flex-col items-center gap-1 p-4 rounded-2xl border-2 transition-all",
                                         scanMode === mode
@@ -264,10 +298,27 @@ export default function QRScanner() {
                                     )}
                                 </div>
 
+                                {/* Camera error message */}
                                 {cameraError && (
                                     <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
                                         <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                                         <span className="text-destructive text-sm">{cameraError}</span>
+                                    </div>
+                                )}
+
+                                {/* Validation error after scan */}
+                                {validationError && !qrBase64 && (
+                                    <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
+                                        <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                                        <span className="text-destructive text-sm">{validationError}</span>
+                                    </div>
+                                )}
+
+                                {/* Loading indicator while validating */}
+                                {validating && (
+                                    <div className="flex justify-center py-2">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                        <span className="ml-2 text-sm text-muted-foreground">Validating QR...</span>
                                     </div>
                                 )}
 
@@ -342,6 +393,18 @@ export default function QRScanner() {
                                     <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
                                         <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                                         <span className="text-destructive text-sm">{uploadError}</span>
+                                    </div>
+                                )}
+                                {validationError && !qrBase64 && (
+                                    <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
+                                        <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                                        <span className="text-destructive text-sm">{validationError}</span>
+                                    </div>
+                                )}
+                                {validating && (
+                                    <div className="flex justify-center py-2">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                        <span className="ml-2 text-sm text-muted-foreground">Validating QR...</span>
                                     </div>
                                 )}
                             </motion.div>
