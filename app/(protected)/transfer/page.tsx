@@ -15,7 +15,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useAccountLookup } from '@/hooks/api/useAccountLookup';
-import { useTransferByP2P, useTransferContribute } from '@/hooks/api/useTransfer';
+import { useTransferByP2P, useTransferContribute, useTransferOwnPiggy } from '@/hooks/api/useTransfer';
+import { useMainAccount, useListPiggyAccounts } from '@/hooks/api/useAccount';
 import { toast } from '@/hooks/use-toast';
 
 function formatCurrency(n: number) {
@@ -23,14 +24,6 @@ function formatCurrency(n: number) {
 }
 
 type TransferType = 'own-piggy' | 'p2p' | 'contribute';
-
-// Static mock data (still used for own piggy goals and balance)
-const mockMainBalance = 1250.50;
-const mockActiveGoals = [
-    { id: '1', name: 'New Laptop', target_amount: 1500, accounts: [{ balance: 890.25 }] },
-    { id: '2', name: 'Vacation Fund', target_amount: 3000, accounts: [{ balance: 1250.00 }] },
-    { id: '3', name: 'Emergency Fund', target_amount: 5000, accounts: [{ balance: 2100.00 }] },
-];
 
 const tabs: { type: TransferType; icon: typeof ArrowUpRight; label: string; desc: string }[] = [
     { type: 'own-piggy', icon: PiggyBank, label: 'To Piggy', desc: 'Fund your saving goal' },
@@ -43,14 +36,17 @@ export default function Transfer() {
     const [type, setType] = useState<TransferType>('own-piggy');
     const [amount, setAmount] = useState('');
     const [selectedPiggy, setSelectedPiggy] = useState('');
+    const [selectedPiggyAccountNumber, setSelectedPiggyAccountNumber] = useState(''); // store account number
     const [recipientAccountNumber, setRecipientAccountNumber] = useState('');
     const [searchAccountNumber, setSearchAccountNumber] = useState('');
     const [notes, setNotes] = useState('');
 
-    // Determine account type to look up based on transfer type
-    const accountTypeParam = type === 'p2p' ? 'MAIN' : type === 'contribute' ? 'PIGGY' : undefined;
+    // Real data
+    const { data: mainAccount, isLoading: balanceLoading, error: balanceError } = useMainAccount();
+    const { data: piggyAccounts, isLoading: piggyLoading, error: piggyError } = useListPiggyAccounts();
 
-    // Recipient lookup – automatically disabled when type === 'own-piggy' because searchAccountNumber will be empty
+    // Account lookup for P2P/Contribute
+    const accountTypeParam = type === 'p2p' ? 'MAIN' : type === 'contribute' ? 'PIGGY' : undefined;
     const {
         data: accountData,
         isLoading: accountLoading,
@@ -60,33 +56,50 @@ export default function Transfer() {
     // Mutations
     const { mutate: transferP2P, isPending: isP2PPending } = useTransferByP2P();
     const { mutate: transferContribute, isPending: isContributePending } = useTransferContribute();
+    const { mutate: transferOwnPiggy, isPending: isOwnPiggyPending } = useTransferOwnPiggy();
 
+    const mainBalance = mainAccount?.current_balance ?? 0;
+    const activeGoals = (piggyAccounts || []).map(account => ({
+        id: account.piggy_goal_id,
+        name: account.goal_name,
+        target_amount: account.target_amount,
+        current_balance: account.current_balance,
+        account_number: account.account_number, // include account number
+    }));
+
+    const selectedGoal = activeGoals.find(g => g.id === selectedPiggy);
     const recipientData = accountData;
 
     const handleSearch = () => {
         const normalized = recipientAccountNumber.trim().replace(/\s/g, '');
-        if (normalized) {
-            setSearchAccountNumber(normalized);
-        } else {
-            setSearchAccountNumber('');
-        }
+        if (normalized) setSearchAccountNumber(normalized);
+        else setSearchAccountNumber('');
     };
 
     const switchTab = (t: TransferType) => {
         setType(t);
         setSelectedPiggy('');
+        setSelectedPiggyAccountNumber('');
         setRecipientAccountNumber('');
         setSearchAccountNumber('');
         setNotes('');
     };
 
+    const handleGoalSelect = (goalId: string) => {
+        const goal = activeGoals.find(g => g.id === goalId);
+        if (goal) {
+            setSelectedPiggy(goalId);
+            setSelectedPiggyAccountNumber(goal.account_number);
+        }
+    };
+
     const amt = parseFloat(amount);
-    const isValidAmount = !isNaN(amt) && amt > 0 && amt <= mockMainBalance;
+    const isValidAmount = !isNaN(amt) && amt > 0 && amt <= mainBalance;
 
     const canSubmit =
         isValidAmount &&
         (type === 'own-piggy'
-            ? !!selectedPiggy
+            ? !!selectedPiggyAccountNumber
             : type === 'p2p'
                 ? !!recipientData && !accountError
                 : type === 'contribute'
@@ -95,7 +108,7 @@ export default function Transfer() {
 
     const getRecipientDisplay = () => {
         if (type === 'own-piggy') {
-            return mockActiveGoals.find(g => g.id === selectedPiggy)?.name || '—';
+            return selectedGoal?.name || '—';
         } else if (type === 'p2p') {
             return recipientData?.account_number || '—';
         } else {
@@ -109,66 +122,54 @@ export default function Transfer() {
 
         if (type === 'p2p') {
             transferP2P(
+                { recipient_account_number: recipientData.account_number, amount: amt },
                 {
-                    recipient_account_number: recipientData.account_number,
-                    amount: amt,
-                },
-                {
-                    onSuccess: (data) => {
+                    onSuccess: () => {
                         toast({
                             title: 'Transfer successful',
                             description: `Sent ${formatCurrency(amt)} to account ${recipientData.account_number}`,
                         });
                         router.push('/');
                     },
-                    onError: (error: any) => {
-                        toast({
-                            title: 'Transfer failed',
-                            description: `Failed to send ${formatCurrency(amt)} to account ${recipientData.account_number}`,
-                        });
-                    },
+                    onError: (err) => toast({ title: 'Transfer failed', description: err.message, variant: 'destructive' }),
                 }
             );
-        } else if (type === 'own-piggy') {
-            // TODO: Implement own piggy transfer
-            toast({
-                title: 'Piggy transfer',
-                description: `Transfer of ${formatCurrency(amt)} to goal "${mockActiveGoals.find(g => g.id === selectedPiggy)?.name}" will be implemented soon.`,
-            });
         } else if (type === 'contribute') {
             transferContribute(
+                { recipient_account_number: recipientData.account_number, amount: amt, notes },
                 {
-                    recipient_account_number: recipientData.account_number,
-                    amount: amt,
-                    notes,
-                },
-                {
-                    onSuccess: (data) => {
+                    onSuccess: () => {
                         toast({
                             title: 'Contribution successful',
                             description: `Contributed ${formatCurrency(amt)} to account ${recipientData.account_number}${notes ? ` with note: "${notes}"` : ''}`,
                         });
                         router.push('/');
                     },
-                    onError: (error: any) => {
+                    onError: (err) => toast({ title: 'Contribution failed', description: err.message, variant: 'destructive' }),
+                }
+            );
+        } else if (type === 'own-piggy') {
+            transferOwnPiggy(
+                { recipient_account_number: selectedPiggyAccountNumber, amount: amt, notes },
+                {
+                    onSuccess: (data) => {
                         toast({
-                            title: 'Contribution failed',
-                            description: `Failed to contribute ${formatCurrency(amt)} to account ${recipientData.account_number}`,
+                            title: 'Transfer successful',
+                            description: `Transferred ${formatCurrency(data.amount)} to ${selectedGoal?.name}. New main balance: ${formatCurrency(data.new_main_balance)}`,
                         });
+                        router.push('/');
                     },
+                    onError: (err) => toast({ title: 'Transfer failed', description: err.message, variant: 'destructive' }),
                 }
             );
         }
     };
 
-    const isProcessing = isP2PPending || isContributePending;
+    const isProcessing = isP2PPending || isContributePending || isOwnPiggyPending;
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
-            <button
-                onClick={() => router.back()}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 -ml-1"
-            >
+            <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 -ml-1">
                 <ArrowLeft className="w-4 h-4" /> Back
             </button>
 
@@ -185,13 +186,9 @@ export default function Transfer() {
                             <button
                                 key={t}
                                 onClick={() => switchTab(t)}
-                                className={`flex flex-col items-start gap-1 p-3 sm:p-4 rounded-2xl border transition-all text-left ${type === t
-                                    ? 'border-primary/40 bg-primary/5 shadow-sm'
-                                    : 'border-border bg-card hover:border-primary/20'
-                                    }`}
+                                className={`flex flex-col items-start gap-1 p-3 sm:p-4 rounded-2xl border transition-all text-left ${type === t ? 'border-primary/40 bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/20'}`}
                             >
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 ${type === t ? 'gradient-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-                                    }`}>
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 ${type === t ? 'gradient-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
                                     <Icon className="w-4 h-4" />
                                 </div>
                                 <span className={`text-sm font-semibold ${type === t ? 'text-primary' : 'text-foreground'}`}>{label}</span>
@@ -230,7 +227,6 @@ export default function Transfer() {
                                         </Button>
                                     </div>
 
-                                    {/* Error from API */}
                                     {accountError && !accountLoading && searchAccountNumber && (
                                         <motion.div
                                             initial={{ opacity: 0, y: 4 }}
@@ -247,7 +243,6 @@ export default function Transfer() {
                                         </motion.div>
                                     )}
 
-                                    {/* Success */}
                                     {accountData && (
                                         <motion.div
                                             initial={{ opacity: 0, y: 4 }}
@@ -267,7 +262,6 @@ export default function Transfer() {
                                         </motion.div>
                                     )}
 
-                                    {/* Fallback: no data and not loading and search attempted */}
                                     {!accountData && !accountLoading && searchAccountNumber && !accountError && (
                                         <motion.div
                                             initial={{ opacity: 0, y: 4 }}
@@ -298,28 +292,36 @@ export default function Transfer() {
                                     className="glass rounded-2xl p-4 sm:p-5 space-y-3"
                                 >
                                     <Label className="text-sm font-medium text-foreground">Select Goal</Label>
-                                    <Select value={selectedPiggy} onValueChange={setSelectedPiggy}>
-                                        <SelectTrigger className="bg-secondary border-border text-foreground">
-                                            <SelectValue placeholder="Choose a goal" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {mockActiveGoals.map(goal => (
-                                                <SelectItem key={goal.id} value={goal.id}>
-                                                    <div className="flex justify-between w-full">
-                                                        <span>{goal.name}</span>
-                                                        <span className="text-muted-foreground text-xs ml-4">
-                                                            {formatCurrency(goal.accounts?.[0]?.balance || 0)} / {formatCurrency(goal.target_amount)}
-                                                        </span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    {piggyLoading ? (
+                                        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                                    ) : piggyError ? (
+                                        <p className="text-destructive text-sm">Failed to load goals</p>
+                                    ) : activeGoals.length === 0 ? (
+                                        <p className="text-muted-foreground text-sm">No piggy goals found. Create one first.</p>
+                                    ) : (
+                                        <Select value={selectedPiggy} onValueChange={handleGoalSelect}>
+                                            <SelectTrigger className="bg-secondary border-border text-foreground">
+                                                <SelectValue placeholder="Choose a goal" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {activeGoals.map(goal => (
+                                                    <SelectItem key={goal.id} value={goal.id}>
+                                                        <div className="flex justify-between w-full">
+                                                            <span>{goal.name}</span>
+                                                            <span className="text-muted-foreground text-xs ml-4">
+                                                                {formatCurrency(goal.current_balance)} / {formatCurrency(goal.target_amount)}
+                                                            </span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        {/* Notes field for contribution (optional) */}
+                        {/* Notes field for contribution */}
                         <AnimatePresence>
                             {type === 'contribute' && accountData && (
                                 <motion.div
@@ -352,10 +354,10 @@ export default function Transfer() {
                                 className="bg-secondary border-border text-foreground text-xl sm:text-2xl font-bold h-12 sm:h-14"
                             />
                             {amount && !isNaN(amt) && (
-                                <p className={`text-xs font-medium ${amt > mockMainBalance ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                    {amt > mockMainBalance
-                                        ? `Exceeds balance by ${formatCurrency(amt - mockMainBalance)}`
-                                        : `Remaining after: ${formatCurrency(mockMainBalance - amt)}`}
+                                <p className={`text-xs font-medium ${amt > mainBalance ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                    {amt > mainBalance
+                                        ? `Exceeds balance by ${formatCurrency(amt - mainBalance)}`
+                                        : `Remaining after: ${formatCurrency(mainBalance - amt)}`}
                                 </p>
                             )}
                         </div>
@@ -370,7 +372,13 @@ export default function Transfer() {
                 <div className="xl:col-span-1 space-y-4 mt-4 xl:mt-0">
                     <div className="glass rounded-2xl p-4 sm:p-5">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2 sm:mb-3">Available Balance</p>
-                        <p className="text-2xl sm:text-3xl font-display font-bold text-foreground">{formatCurrency(mockMainBalance)}</p>
+                        {balanceLoading ? (
+                            <div className="h-8 w-32 bg-secondary rounded animate-pulse" />
+                        ) : balanceError ? (
+                            <p className="text-destructive text-sm">Failed to load</p>
+                        ) : (
+                            <p className="text-2xl sm:text-3xl font-display font-bold text-foreground">{formatCurrency(mainBalance)}</p>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">Main Account · USD</p>
                     </div>
 

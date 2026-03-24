@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
   },
   transfers: {
     p2p: '/transfers/p2p',
-    contribute: '/transfers/contribute'
+    contribute: '/transfers/contribute',
+    own_piggy: '/transfers/main-to-piggy'
   }
 } as const;

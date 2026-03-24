@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import { transferService } from "@/lib/api/services/transfer.service";
 import { P2PTransferRequest, P2PTransferResponse } from "@/types/p2p-transfer";
 import { ContributeTransferRequest } from "@/types/contribute-transfer";
+import { OwnPiggyTransferRequest, OwnPiggyTransferResponse } from "@/types/own-piggy-transfer";
 
 export const useTransfer = () => {
   const { data: session } = useSession();
@@ -67,4 +68,19 @@ export const useTransferContribute = () => {
         },
     });
 };
+
+export const useTransferOwnPiggy = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation<OwnPiggyTransferResponse, Error, OwnPiggyTransferRequest>({
+        mutationFn: (data: OwnPiggyTransferRequest) => transferService.ownPiggyTransfer(data),
+        onSuccess: () => {
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['account'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['piggy-accounts'] });
+        },
+    });
+};
+
 

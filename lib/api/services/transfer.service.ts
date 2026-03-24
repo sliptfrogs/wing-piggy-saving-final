@@ -6,6 +6,10 @@ import {
   ContributeTransferResponse,
 } from "@/types/contribute-transfer";
 import { P2PTransferRequest, P2PTransferResponse } from "@/types/p2p-transfer";
+import {
+  OwnPiggyTransferRequest,
+  OwnPiggyTransferResponse,
+} from "@/types/own-piggy-transfer";
 
 export const transferService = {
   processQR: async (
@@ -43,6 +47,14 @@ export const transferService = {
   ): Promise<ContributeTransferResponse> => {
     return apiClient.post<ContributeTransferResponse>(
       API_ENDPOINTS.transfers.contribute,
+      data,
+    );
+  },
+  ownPiggyTransfer: async (
+    data: OwnPiggyTransferRequest,
+  ): Promise<OwnPiggyTransferResponse> => {
+    return apiClient.post<OwnPiggyTransferResponse>(
+      API_ENDPOINTS.transfers.own_piggy,
       data,
     );
   },
