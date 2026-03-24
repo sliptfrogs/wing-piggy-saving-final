@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { toast } from '@/hooks/useToast'; // adjust to your toast hook
+import { toast } from '../use-toast';
+
 
 interface UseApiOptions<T> {
   /** Called when the operation succeeds */

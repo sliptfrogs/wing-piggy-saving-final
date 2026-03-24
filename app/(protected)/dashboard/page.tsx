@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useAccountMain, useMainAccount } from '@/hooks/api/useAccount';
+import { useSession } from 'next-auth/react';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -25,7 +27,6 @@ function getTransactionIcon(type: string) {
 }
 
 const mockProfile = { full_name: 'Alex Johnson' };
-const mockMainAccount = { balance: 1250.50, currency: 'USD', accountNumber: '•••• 4821' };
 
 const mockPiggyGoals = [
     { id: '1', name: 'New Laptop', target_amount: 1500, status: 'active', hide_balance: false, accounts: [{ balance: 890.25 }] },
@@ -43,6 +44,13 @@ const mockTransactions = [
 
 export default function Dashboard() {
     const [showBalance, setShowBalance] = useState(true);
+
+    const { data: mainAccount, isLoading, error } = useMainAccount();
+    const session = useSession();
+
+    const displayName = session?.data?.user?.email?.split('@')[0] || 'Guest';
+
+
     const router = useRouter();
 
     const h = new Date().getHours();
@@ -59,7 +67,7 @@ export default function Dashboard() {
     ];
 
     const stats = [
-        { label: 'Total Balance', value: formatCurrency(mockMainAccount.balance), icon: Wallet, trend: '+12.4%', color: 'text-primary' },
+        { label: 'Total Balance', value: formatCurrency(mainAccount?.current_balance ?? 0), icon: Wallet, trend: '+12.4%', color: 'text-primary' },
         { label: 'Monthly Spend', value: '$345.50', icon: TrendingUp, trend: '-8.2%', color: 'text-muted-foreground' },
         { label: 'Active Goals', value: '3', icon: Target, trend: '+1 this month', color: 'text-emerald-500' },
     ];
@@ -76,7 +84,7 @@ export default function Dashboard() {
                             <p className="text-sm text-muted-foreground">Welcome back,</p>
                         </div>
                         <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground">
-                            {mockProfile.full_name.split(' ')[0]} 👋
+                            {displayName} 👋
                             <span className="text-lg text-muted-foreground font-normal ml-2">Good {greeting}</span>
                         </h1>
                     </div>
@@ -116,7 +124,7 @@ export default function Dashboard() {
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider">Main Account</p>
-                                        <p className="text-xs text-muted-foreground font-mono">{mockMainAccount.accountNumber}</p>
+                                        <p className="text-xs text-muted-foreground font-mono">{mainAccount?.account_number}</p>
                                     </div>
                                 </div>
                                 <button
@@ -133,10 +141,10 @@ export default function Dashboard() {
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Instant</span>
                                 </p>
                                 <h2 className="text-4xl lg:text-5xl font-display font-bold text-foreground tracking-tight">
-                                    {showBalance ? formatCurrency(mockMainAccount.balance) : '••••••'}
+                                    {showBalance ? formatCurrency(mainAccount?.current_balance ?? 0) : '••••••'}
                                 </h2>
                                 <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                    <span>{mockMainAccount.currency}</span>
+                                    <span>{mainAccount?.currency}</span>
                                     <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
                                     <span>Last updated: just now</span>
                                 </p>

@@ -12,6 +12,11 @@ export const API_ENDPOINTS = {
     profile: '/user/profile',
     updateProfile: '/user/profile',
   },
+  account: {
+    main: '/accounts/my-accounts/MAIN',
+    list: '/accounts',
+    list_piggys: '/accounts/piggy-account',
+  },
   piggy: {
     list: '/piggy',
     create: '/piggy',
@@ -22,4 +27,7 @@ export const API_ENDPOINTS = {
     list: '/transactions',
     create: '/transactions',
   },
+  qr: {
+    generate: '/qr/generate/p2p-transfer-qr'
+  }
 } as const;

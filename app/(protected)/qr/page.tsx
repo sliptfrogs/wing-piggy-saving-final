@@ -63,6 +63,8 @@ export default function QRScanner() {
     const scannerContainerId = 'qr-reader';
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    
+
     const stopScanner = useCallback(async () => {
         if (scannerRef.current) {
             try {
