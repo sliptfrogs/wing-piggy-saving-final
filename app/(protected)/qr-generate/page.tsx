@@ -4,21 +4,13 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { PiggyBank, Wallet, Download, Share2, RefreshCw, TrendingUp } from 'lucide-react';
+import { PiggyBank, Wallet, Download, Share2, RefreshCw, TrendingUp, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSession } from 'next-auth/react';
-import { useListPiggyAccounts } from '@/hooks/api/useAccount';
+import { useListPiggyAccounts, useMainAccount } from '@/hooks/api/useAccount';
 import { useQRCode } from '@/hooks/api/useQr';
 
 type QRTarget = 'main' | 'piggy';
-
-// Mock main account (replace with real data later)
-const mockMainAccount = {
-  id: 'main_123',
-  user_id: 'user_456',
-  balance: 1250.50,
-  currency: 'USD',
-};
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -29,14 +21,16 @@ export default function QRGenerator() {
   const [target, setTarget] = useState<QRTarget>('main');
   const [selectedGoalId, setSelectedGoalId] = useState('');
 
-  const session = useSession();
-
   // Fetch piggy accounts
   const {
     data: piggyAccounts,
     isLoading: piggyLoading,
     error: piggyError,
   } = useListPiggyAccounts();
+  /**
+   * Fetch: Main Account
+   */
+  const { data: mainAccount, isLoading: mainAccountIsLoading, error: mainAccountError } = useMainAccount();
 
   // Transform API data
   const activeGoals = (piggyAccounts || []).map(account => ({
@@ -129,7 +123,7 @@ export default function QRGenerator() {
                   type: 'main' as QRTarget,
                   icon: Wallet,
                   label: 'Main Account',
-                  sub: formatCurrency(mockMainAccount.balance),
+                  sub: formatCurrency(mainAccount?.current_balance || 0),
                 },
                 {
                   type: 'piggy' as QRTarget,
@@ -144,25 +138,22 @@ export default function QRGenerator() {
                     setTarget(t);
                     setSelectedGoalId('');
                   }}
-                  className={`flex flex-col items-start gap-1 p-4 rounded-xl border transition-all text-left ${
-                    target === t
-                      ? 'border-primary/40 bg-primary/5'
-                      : 'border-border bg-background hover:border-primary/20'
-                  }`}
+                  className={`flex flex-col items-start gap-1 p-4 rounded-xl border transition-all text-left ${target === t
+                    ? 'border-primary/40 bg-primary/5'
+                    : 'border-border bg-background hover:border-primary/20'
+                    }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 ${
-                      target === t
-                        ? 'gradient-primary text-primary-foreground'
-                        : 'bg-secondary text-muted-foreground'
-                    }`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 ${target === t
+                      ? 'gradient-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground'
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                   </div>
                   <span
-                    className={`text-sm font-semibold leading-tight ${
-                      target === t ? 'text-primary' : 'text-foreground'
-                    }`}
+                    className={`text-sm font-semibold leading-tight ${target === t ? 'text-primary' : 'text-foreground'
+                      }`}
                   >
                     {label}
                   </span>
@@ -260,15 +251,8 @@ export default function QRGenerator() {
 
                 {/* QR Code Image */}
                 <div className="relative">
-                  {qrLoading ? (
-                    <div className="bg-white p-5 rounded-2xl shadow-sm w-[220px] h-[220px] flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-secondary animate-pulse" />
-                    </div>
-                  ) : qrError ? (
-                    <div className="bg-white p-5 rounded-2xl shadow-sm w-[220px] h-[220px] flex items-center justify-center text-red-500 text-xs">
-                      Failed to load
-                    </div>
-                  ) : qrImageUrl ? (
+                  {/* QR image */}
+                  {qrImageUrl ? (
                     <img
                       src={qrImageUrl}
                       alt="QR Code"
@@ -279,22 +263,21 @@ export default function QRGenerator() {
                       <div className="w-12 h-12 rounded-full bg-secondary animate-pulse" />
                     </div>
                   )}
-                  {/* Corner accents */}
-                  {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map(
-                    (pos, i) => (
-                      <div
-                        key={i}
-                        className={`absolute ${pos} w-5 h-5 border-2 border-primary rounded-sm -m-1
-                          ${i === 0
-                            ? 'border-r-0 border-b-0'
-                            : i === 1
-                            ? 'border-l-0 border-b-0'
-                            : i === 2
-                            ? 'border-r-0 border-t-0'
-                            : 'border-l-0 border-t-0'}`}
-                      />
-                    )
+
+                  {/* Loading overlay – only show when loading but we already have an image */}
+                  {qrLoading && qrImageUrl && (
+                    <div className="absolute inset-0 bg-white/60 rounded-2xl flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
                   )}
+
+                  {/* Modern L‑shaped corners */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary/90 rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary/90 rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary/90 rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary/90 rounded-br-lg" />
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -354,21 +337,22 @@ export default function QRGenerator() {
           </AnimatePresence>
 
           {/* Account summary strip */}
+
           {showQR && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(target === 'main'
                 ? [
-                    { label: 'Account', value: 'Main Account' },
-                    { label: 'Balance', value: formatCurrency(mockMainAccount.balance) },
-                    { label: 'Currency', value: mockMainAccount.currency },
-                  ]
+                  { label: 'Account', value: 'Main Account' },
+                  { label: 'Balance', value: formatCurrency(mainAccount?.current_balance || 0) },
+                  { label: 'Currency', value: mainAccount?.currency || 'USD' },
+                ]
                 : selectedGoal
-                ? [
+                  ? [
                     { label: 'Goal', value: selectedGoal.name },
                     { label: 'Saved', value: formatCurrency(goalBalance) },
                     { label: 'Progress', value: `${goalProgress}%` },
                   ]
-                : []
+                  : []
               ).map(({ label, value }) => (
                 <div key={label} className="glass rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground">{label}</p>
@@ -377,25 +361,6 @@ export default function QRGenerator() {
               ))}
             </div>
           )}
-
-          {/* Tips */}
-          <div className="glass rounded-2xl p-5 space-y-3">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              How it works
-            </Label>
-            {[
-              { step: '1', text: 'Choose where to receive money' },
-              { step: '2', text: 'Share your QR code with the sender' },
-              { step: '3', text: 'They scan and send — instantly' },
-            ].map(({ step, text }) => (
-              <div key={step} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                  {step}
-                </div>
-                <p className="text-sm text-muted-foreground">{text}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

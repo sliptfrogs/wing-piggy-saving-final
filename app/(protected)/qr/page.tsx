@@ -670,28 +670,6 @@ export default function QRScanner() {
                             </div>
                         </div>
                     )}
-
-                    <div className="glass rounded-2xl p-5 space-y-3">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                            <Info className="w-3 h-3" />
-                            How it works
-                        </p>
-                        <div className="space-y-3">
-                            {[
-                                { step: '1', text: 'Scan camera or upload QR image', icon: ScanLine },
-                                { step: '2', text: 'Enter the amount you want to send', icon: DollarSign },
-                                { step: '3', text: 'Confirm — funds transfer instantly', icon: Zap },
-                            ].map(({ step, text, icon: Icon }) => (
-                                <div key={step} className="flex items-start gap-3 group">
-                                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-110 transition-transform">
-                                        {step}
-                                    </div>
-                                    <Icon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                                    <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

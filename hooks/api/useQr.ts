@@ -19,5 +19,6 @@ export const useQRCode = (
     },
     enabled: !!token,
     staleTime: Infinity,
+    // placeholderData: (previousData) => previousData,
   });
 };
