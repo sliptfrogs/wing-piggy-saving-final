@@ -14,11 +14,18 @@ import dayjs from 'dayjs';
 import {
     ArrowLeft, PiggyBank, CalendarIcon, Lock, EyeOff,
     Target, Sparkles, TrendingUp, Plus, ChevronRight, Check,
-    Plane
+    Info
 } from 'lucide-react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-
+import { toast } from '@/hooks/use-toast';
+import { useCreatePiggyGoal } from '@/hooks/api/useCreatePiggyGoal';
 
 function formatCurrency(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -27,16 +34,13 @@ function formatCurrency(n: number) {
 const presetAmounts = [500, 1000, 2500, 5000, 10000];
 
 const presetGoals = [
-    { label: 'Vacation', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500}/>, amount: 2000, tagline: 'Travel & leisure' },
-    { label: 'New Laptop', emoji: <Image src="https://ipowerresale.com/cdn/shop/files/media_31b63b50-d45b-406a-8a4d-77f6c3baf8f5.png?v=1766098577" alt='Description' width={600} height={500}/>, amount: 1500, tagline: 'Tech upgrade' },
-    { label: 'Emergency Fund', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/021/827/100/small/emergency-ambulance-car-medical-vehicle-illustration-png.png" alt='Description' width={600} height={600}/>, amount: 5000, tagline: 'Peace of mind' },
-    { label: 'Car', emoji: <Image src="https://www.bmw-m.com/content/dam/bmw/marketBMW_M/www_bmw-m_com/all-models/model-navigation/bmw-m3-competition-sedan-m-xdrive-lci-flyout.png" alt='Description' width={600} height={500}/>, amount: 15000, tagline: 'Hit the road' },
-    { label: 'Wedding', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/042/383/882/small/groom-and-bride-wedding-characters-png.png" alt='Description' width={600} height={500}/>, amount: 10000, tagline: 'Big day' },
-    { label: 'Custom', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/020/696/226/small/3d-minimal-money-saving-concept-depositing-money-collecting-money-for-retirement-salary-management-concept-wallet-with-a-money-bag-and-a-pile-of-money-3d-illustration-png.png" alt='Description' width={600} height={500}/>, amount: 0, tagline: 'Your own goal' },
+    { label: 'Vacation', emoji: <Image src="https://www.pngall.com/wp-content/uploads/2016/05/Vacation-Free-Download-PNG.png" alt='Description' width={600} height={500} />, amount: 2000, tagline: 'Travel & leisure' },
+    { label: 'New Laptop', emoji: <Image src="https://ipowerresale.com/cdn/shop/files/media_31b63b50-d45b-406a-8a4d-77f6c3baf8f5.png?v=1766098577" alt='Description' width={600} height={500} />, amount: 1500, tagline: 'Tech upgrade' },
+    { label: 'Emergency Fund', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/021/827/100/small/emergency-ambulance-car-medical-vehicle-illustration-png.png" alt='Description' width={600} height={600} />, amount: 5000, tagline: 'Peace of mind' },
+    { label: 'Car', emoji: <Image src="https://www.bmw-m.com/content/dam/bmw/marketBMW_M/www_bmw-m_com/all-models/model-navigation/bmw-m3-competition-sedan-m-xdrive-lci-flyout.png" alt='Description' width={600} height={500} />, amount: 15000, tagline: 'Hit the road' },
+    { label: 'Wedding', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/042/383/882/small/groom-and-bride-wedding-characters-png.png" alt='Description' width={600} height={500} />, amount: 10000, tagline: 'Big day' },
+    { label: 'Custom', emoji: <Image src="https://static.vecteezy.com/system/resources/thumbnails/020/696/226/small/3d-minimal-money-saving-concept-depositing-money-collecting-money-for-retirement-salary-management-concept-wallet-with-a-money-bag-and-a-pile-of-money-3d-illustration-png.png" alt='Description' width={600} height={500} />, amount: 0, tagline: 'Your own goal' },
 ];
-
-const interestRate = (days: number | null) =>
-    days && days >= 90 ? 4.5 : days && days >= 30 ? 3.0 : 1.5;
 
 // Step indicator
 const steps = ['Template', 'Details', 'Lock & Privacy'];
@@ -48,24 +52,54 @@ export default function CreatePiggy() {
     const [targetAmount, setTargetAmount] = useState('');
     const [expiryDate, setExpiryDate] = useState<Date>();
     const [hideBalance, setHideBalance] = useState(false);
-    const [loading, setLoading] = useState(false);
+
+    // Real mutation hook
+    const { mutate: createGoal, isPending } = useCreatePiggyGoal();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setTimeout(() => { setLoading(false); router.push('/piggy'); }, 900);
+        if (!canSubmit) return;
+
+        const target = parseFloat(targetAmount);
+        const lockDays = expiryDate ? differenceInCalendarDays(expiryDate, new Date()) : null;
+
+        createGoal(
+            {
+                name: name.trim(),
+                target_amount: target,
+                hide_balance: hideBalance,
+                lock_period_days: lockDays && lockDays > 0 ? lockDays : undefined,
+            },
+            {
+                onSuccess: () => {
+                    toast({
+                        title: 'Goal created',
+                        description: `${name} has been created successfully!`,
+                    });
+                    router.push('/piggy');
+                },
+                onError: (err) => {
+                    toast({
+                        title: 'Creation failed',
+                        description: err.message,
+                        variant: 'destructive',
+                    });
+                },
+            }
+        );
     };
 
     const target = parseFloat(targetAmount);
     const lockDays = expiryDate ? differenceInCalendarDays(expiryDate, new Date()) : null;
     const isValid = name.trim().length > 0 && !isNaN(target) && target > 0;
-    const rate = interestRate(lockDays);
 
     const canProceed = [
         true,                   // step 0 — template always passable
         name.trim() && !isNaN(target) && target > 0, // step 1
         true,                   // step 2 — lock is optional
     ];
+
+    const canSubmit = isValid && !isPending; // Final submit button
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-7 xl:py-10 max-w-[1400px] mx-auto space-y-7">
@@ -81,51 +115,48 @@ export default function CreatePiggy() {
                     </span>
                     <span className="hidden sm:inline">Back to Goals</span>
                 </button>
-
-                {/* Step tracker */}
-
-
-                {/* <div className="w-20 sm:w-24" /> spacer */}
             </div>
-            <div className="flex w-full justify-center  items-center gap-2 sm:gap-3 md:gap-4">
-                    {steps.map((s, i) => (
-                        <div key={s} className="flex items-center gap-2 sm:gap-3 md:gap-4">
-                            <button
-                                onClick={() => i < step && setStep(i)}
+
+            {/* Step tracker */}
+            <div className="flex w-full justify-center items-center gap-2 sm:gap-3 md:gap-4">
+                {steps.map((s, i) => (
+                    <div key={s} className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                        <button
+                            onClick={() => i < step && setStep(i)}
+                            className={cn(
+                                'flex items-center gap-1.5 text-xs font-semibold transition-colors',
+                                i < step ? 'text-primary cursor-pointer' : i === step ? 'text-foreground' : 'text-muted-foreground/50 cursor-default'
+                            )}
+                        >
+                            <span
                                 className={cn(
-                                    'flex items-center gap-1.5 text-xs font-semibold transition-colors',
-                                    i < step ? 'text-primary cursor-pointer' : i === step ? 'text-foreground' : 'text-muted-foreground/50 cursor-default'
+                                    'flex items-center justify-center rounded-full transition-all',
+                                    'w-9 h-9 sm:w-7 sm:h-7 text-[10px] sm:text-xs font-bold',
+                                    i < step
+                                        ? 'bg-primary text-primary-foreground'
+                                        : i === step
+                                            ? 'border-2 border-primary text-primary'
+                                            : 'border border-border text-muted-foreground/40'
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'flex items-center justify-center rounded-full transition-all',
-                                        'w-9 h-9 sm:w-7 sm:h-7 text-[10px] sm:text-xs font-bold',
-                                        i < step
-                                            ? 'bg-primary text-primary-foreground'
-                                            : i === step
-                                                ? 'border-2 border-primary text-primary'
-                                                : 'border border-border text-muted-foreground/40'
-                                    )}
-                                >
-                                    {i < step ? <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : i + 1}
-                                </span>
-                                <span className="hidden sm:inline text-xs font-medium whitespace-nowrap">
-                                    {s}
-                                </span>
-                            </button>
-                            {i < steps.length - 1 && (
-                                <div
-                                    className={cn(
-                                        'h-px transition-colors',
-                                        i < step ? 'bg-primary' : 'bg-border',
-                                        'w-4 sm:w-8 md:w-12' // responsive line length
-                                    )}
-                                />
-                            )}
-                        </div>
-                    ))}
-                </div>
+                                {i < step ? <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : i + 1}
+                            </span>
+                            <span className="hidden sm:inline text-xs font-medium whitespace-nowrap">
+                                {s}
+                            </span>
+                        </button>
+                        {i < steps.length - 1 && (
+                            <div
+                                className={cn(
+                                    'h-px transition-colors',
+                                    i < step ? 'bg-primary' : 'bg-border',
+                                    'w-4 sm:w-8 md:w-12' // responsive line length
+                                )}
+                            />
+                        )}
+                    </div>
+                ))}
+            </div>
 
             {/* ── Page title ── */}
             <div>
@@ -237,7 +268,7 @@ export default function CreatePiggy() {
                                                 required
                                                 min="1"
                                                 step="0.01"
-                                                className="pl-8 bg-secondary border-border text-foreground text-2xl  font-bold h-14 tabular-nums
+                                                className="pl-8 bg-secondary border-border text-foreground text-2xl font-bold h-14 tabular-nums
                         [&::-webkit-inner-spin-button]:appearance-none
                         [&::-webkit-outer-spin-button]:appearance-none
                         [-moz-appearance:textfield] focus:ring-2 focus:ring-primary/20"
@@ -252,7 +283,7 @@ export default function CreatePiggy() {
                                                         type="button"
                                                         onClick={() => setTargetAmount(String(amt))}
                                                         className={cn(
-                                                            'px-3 py-1.5 rounded-full  font-medium border transition-all',
+                                                            'px-3 py-1.5 rounded-full font-medium border transition-all',
                                                             targetAmount === String(amt)
                                                                 ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                                                                 : 'bg-background/50 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-background'
@@ -291,7 +322,7 @@ export default function CreatePiggy() {
                                             <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                                                 <Lock className="w-4 h-4 text-primary" /> Lock Until
                                             </p>
-                                            <p className="text-xs text-muted-foreground mt-0.5">Lock to earn up to 4.5% p.a. interest</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Lock funds to prevent early withdrawal</p>
                                         </div>
                                         {expiryDate && (
                                             <button
@@ -304,7 +335,6 @@ export default function CreatePiggy() {
                                         )}
                                     </div>
 
-                                    {/* Ant Design DatePicker */}
                                     <DatePicker
                                         value={expiryDate ? dayjs(expiryDate) : null}
                                         onChange={(date: Dayjs | null) => setExpiryDate(date ? date.toDate() : undefined)}
@@ -312,33 +342,20 @@ export default function CreatePiggy() {
                                         placeholder="Pick a date (optional)"
                                         format="MMMM D, YYYY"
                                         className="w-full"
-                                    // Removed popupClassName; use classNames if custom styling is needed
                                     />
 
-                                    {/* Interest tier badges (unchanged) */}
-                                    <div className="grid grid-cols-3 gap-2 pt-1">
-                                        {[
-                                            { label: 'Flexible', rate: '1.5%', days: null, active: !lockDays || lockDays < 30 },
-                                            { label: '30 days', rate: '3.0%', days: 30, active: lockDays !== null && lockDays >= 30 && lockDays < 90 },
-                                            { label: '90 days', rate: '4.5%', days: 90, active: lockDays !== null && lockDays >= 90 },
-                                        ].map(({ label, rate: r, active }) => (
-                                            <div
-                                                key={label}
-                                                className={cn(
-                                                    'flex flex-col items-center gap-0.5 py-2.5 px-2 rounded-xl border text-center transition-all',
-                                                    active ? 'border-primary/40 bg-primary/5' : 'border-border bg-background opacity-50'
-                                                )}
-                                            >
-                                                <span className={cn('text-base font-bold', active ? 'text-primary' : 'text-muted-foreground')}>{r}</span>
-                                                <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    {/* Informational note about interest */}
+
 
                                     {lockDays && lockDays > 0 && (
-                                        <div className="flex items-center gap-2 text-xs bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 text-amber-600">
-                                            <Lock className="w-3.5 h-3.5 shrink-0" />
-                                            Locked for <span className="font-bold">{lockDays} days</span> — early break incurs a 5% penalty
+                                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 rounded-xl px-3 py-2 border border-border/50">
+                                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                                <Lock className="w-3 h-3 text-amber-500" />
+                                            </div>
+                                            <span>
+                                                Locked for <span className="font-semibold text-foreground">{lockDays} days</span>.
+                                                <span className="text-xs text-muted-foreground ml-1">Early break incurs a 5% penalty.</span>
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -363,9 +380,9 @@ export default function CreatePiggy() {
                                     <Button type="button" variant="outline" onClick={() => setStep(1)} className="gap-2">
                                         <ArrowLeft className="w-4 h-4" /> Back
                                     </Button>
-                                    <Button type="submit" variant="hero" size="lg" disabled={!isValid || loading}
+                                    <Button type="submit" variant="hero" size="lg" disabled={!canSubmit}
                                         className="gap-2 px-10 shadow-lg shadow-primary/20">
-                                        {loading
+                                        {isPending
                                             ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Creating…</>
                                             : <><Plus className="w-4 h-4" /> Create Goal</>}
                                     </Button>
@@ -377,18 +394,16 @@ export default function CreatePiggy() {
                 </div>
 
                 {/* ── RIGHT COLUMN: live preview (sticky) ── */}
-                <div className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-6 self-start">
+                <div className="lg:col-span-5  xl:col-span-4 space-y-4 lg:sticky lg:top-6 self-start">
 
                     {/* Goal preview card */}
                     <div className="relative overflow-hidden glass rounded-2xl p-6">
-                        {/* Ambient glow blob */}
                         <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
 
                         <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.12em] mb-5 flex items-center gap-1.5">
                             <Sparkles className="w-3 h-3 text-primary" /> Live Preview
                         </p>
 
-                        {/* Icon + name */}
                         <div className="flex items-center gap-4 mb-6">
                             <div className={cn(
                                 'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300',
@@ -407,7 +422,6 @@ export default function CreatePiggy() {
                             </div>
                         </div>
 
-                        {/* Target amount */}
                         <div className="mb-5">
                             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Target</p>
                             <p className="text-3xl font-display font-bold text-foreground leading-none">
@@ -417,7 +431,6 @@ export default function CreatePiggy() {
                             </p>
                         </div>
 
-                        {/* Progress bar */}
                         <div className="space-y-1.5">
                             <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Progress</span><span>0%</span>
@@ -430,6 +443,7 @@ export default function CreatePiggy() {
                     </div>
 
                     {/* Configuration summary */}
+
                     <div className="glass rounded-2xl p-5 space-y-0 divide-y divide-border">
                         {[
                             {
@@ -437,30 +451,45 @@ export default function CreatePiggy() {
                                 label: 'Lock Period',
                                 value: lockDays && lockDays > 0 ? `${lockDays} days` : 'None',
                                 accent: false,
+                                tooltip: null,
                             },
                             {
                                 icon: CalendarIcon,
                                 label: 'Unlocks On',
                                 value: expiryDate && lockDays && lockDays > 0 ? format(expiryDate, 'MMM d, yyyy') : '—',
                                 accent: false,
+                                tooltip: null,
                             },
                             {
                                 icon: EyeOff,
                                 label: 'Hide Balance',
                                 value: hideBalance ? 'On' : 'Off',
                                 accent: hideBalance,
+                                tooltip: hideBalance ? 'Your balance will be hidden from your dashboard until the goal is completed or broken.' : null,
                             },
-                            {
-                                icon: TrendingUp,
-                                label: 'Interest Rate',
-                                value: `${rate}% p.a.`,
-                                accent: true,
-                            },
-                        ].map(({ icon: Icon, label, value, accent }) => (
+                        ].map(({ icon: Icon, label, value, accent, tooltip }) => (
                             <div key={label} className="flex items-center justify-between py-3">
                                 <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                                    {label}
+                                    {tooltip ? (
+                                        <TooltipProvider delayDuration={200}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-2.5 cursor-help">
+                                                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                                                        {label}
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-[220px] text-center">
+                                                    <p className="text-xs">{tooltip}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    ) : (
+                                        <div className="flex items-center gap-2.5">
+                                            <Icon className="w-3.5 h-3.5 shrink-0" />
+                                            {label}
+                                        </div>
+                                    )}
                                 </div>
                                 <span className={cn('text-sm font-semibold tabular-nums', accent ? 'text-primary' : 'text-foreground')}>
                                     {value}
@@ -469,18 +498,59 @@ export default function CreatePiggy() {
                         ))}
                     </div>
 
-                    {/* Contextual tip */}
-                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                        <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <Sparkles className="w-3 h-3" /> Tip
-                        </p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                            {lockDays && lockDays >= 90
-                                ? '🚀 Locked 90+ days earns max interest at 4.5% p.a. Great commitment!'
-                                : lockDays && lockDays > 0
-                                    ? 'Extend your lock to 90+ days to unlock the highest 4.5% interest tier.'
-                                    : 'Set a lock date to earn up to 4.5% annual interest on your savings.'}
-                        </p>
+                    {/* Interest reminder */}
+                    <div className="glass rounded-2xl p-5 space-y-0 divide-y divide-border">
+                        <div className="flex items-start gap-3">
+                            {/* Icon */}
+                            <div className="relative">
+                                <div className="absolute inset-0 rounded-full bg-primary/20 blur-sm" />
+                                <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                                    <Info className="h-4 w-4 text-primary" />
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 space-y-3">
+                                <div>
+                                    <h4 className="text-sm font-semibold text-foreground">Interest earnings</h4>
+                                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                                        Calculated daily on your piggy balance, paid monthly to your account.
+                                    </p>
+                                </div>
+
+                                {/* Rate cards */}
+                                <div className="grid grid-cols-2 gap-2 pt-1">
+                                    {/* Tier 1 */}
+                                    <div className="rounded-xl border border-border/50 bg-secondary/20 px-3 py-2.5 transition-all hover:border-primary/20 hover:bg-primary/5">
+                                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Balance</p>
+                                        <p className="text-sm font-semibold text-foreground mt-0.5">&lt; $5,000</p>
+                                        <div className="flex items-baseline gap-1 mt-1">
+                                            <span className="text-lg font-bold text-foreground">0.10%</span>
+                                            <span className="text-[10px] text-muted-foreground">p.a.</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Tier 2 */}
+                                    <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 transition-all">
+                                        <p className="text-[11px] font-medium text-primary uppercase tracking-wider">Balance</p>
+                                        <p className="text-sm font-semibold text-foreground mt-0.5">≥ $5,000</p>
+                                        <div className="flex items-baseline gap-1 mt-1">
+                                            <span className="text-lg font-bold text-primary">3.0%</span>
+                                            <span className="text-[10px] text-primary/70">p.a.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Additional info */}
+                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1">
+                                    <CalendarIcon className="w-3 h-3" />
+                                    <span>Interest paid monthly</span>
+                                    <span className="w-1 h-1 rounded-full bg-border" />
+                                    <TrendingUp className="w-3 h-3" />
+                                    <span>Compounded daily</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

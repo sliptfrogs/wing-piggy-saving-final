@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -14,96 +14,145 @@ import {
     AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-    ArrowLeft, QrCode, PiggyBank, Hammer, ArrowUpRight,
-    Lock, EyeOff, AlertTriangle, Info, TrendingUp, Calendar, Target, ChevronRight,
-    Sparkles, Clock, Gift, Shield, Zap, DollarSign, CheckCircle2
+    ArrowLeft, QrCode, PiggyBank, Hammer,
+    Lock, EyeOff, AlertTriangle, Info, TrendingUp, Target,
+    Sparkles, Clock, Gift, Shield, Zap, DollarSign, CheckCircle2, Loader2,
+    CircleDot,
+    CalendarIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePiggyGoalByAccountNumber } from '@/hooks/api/usePiggyGoal';
+import { useMainAccount } from '@/hooks/api/useAccount';
+import { useTransferOwnPiggy } from '@/hooks/api/useTransfer';
+import { toast } from '@/hooks/use-toast';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
-// ── Static mock ──────────────────────────────────────────────────────────────
-
-const mockGoal = {
-    id: '2',
-    name: 'Vacation Fund',
-    target_amount: 3000,
-    status: 'active' as 'active' | 'completed' | 'broken',
-    hide_balance: false,
-    lock_period_days: 90,
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-    accounts: [{ id: 'acc2', balance: 1250.00 }],
-};
-
-const mockMainAccountBalance = 1250.50;
-
-const mockInterestHistory = [
-    { id: 'i1', amount: 2.50, created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
-    { id: 'i2', amount: 2.48, created_at: new Date(Date.now() - 14 * 86400000).toISOString() },
-    { id: 'i3', amount: 2.45, created_at: new Date(Date.now() - 21 * 86400000).toISOString() },
-    { id: 'i4', amount: 2.40, created_at: new Date(Date.now() - 28 * 86400000).toISOString() },
-];
-
-// ── Component ────────────────────────────────────────────────────────────────
-
 export default function PiggyDetail() {
     const router = useRouter();
+    const params = useParams();
+    const accountNumber = params.id as string;
+
+    const [currentTime, setCurrentTime] = useState(() => new Date());
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const { data: piggyGoal, isLoading, error } = usePiggyGoalByAccountNumber(accountNumber);
+    const { data: mainAccount } = useMainAccount();
+    const { mutate: addMoney, isPending: isAdding } = useTransferOwnPiggy();
+
     const [showQR, setShowQR] = useState(false);
     const [addAmount, setAddAmount] = useState('');
-    const [adding, setAdding] = useState(false);
+    const [notes, setNotes] = useState('');
     const [breaking, setBreaking] = useState(false);
 
-    const goal = mockGoal;
-    const account = goal.accounts?.[0];
-    const balance = account?.balance || 0;
-    const isHidden = goal.hide_balance && goal.status === 'active';
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
-    const lockExpiry = goal.lock_period_days
-        ? new Date(new Date(goal.created_at).getTime() + goal.lock_period_days * 86400000)
-        : null;
-    const isLockExpired = lockExpiry ? new Date() > lockExpiry : true;
+    if (error || !piggyGoal) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center text-destructive">
+                    <p>Failed to load piggy goal: {error?.message || 'Not found'}</p>
+                    <Button variant="outline" className="mt-4" onClick={() => router.push('/piggy')}>
+                        Back to Goals
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
-    const daysRemaining = lockExpiry
-        ? Math.max(0, Math.ceil((lockExpiry.getTime() - Date.now()) / 86400000))
+    const {
+        id,
+        name,
+        target_amount: targetAmount,
+        status,
+        lock_expires_at: lockExpiresAt,
+        created_at: createdAt,
+        current_balance: balance,
+        is_public: isPublic,
+        hide_balance: hideBalance,
+    } = piggyGoal;
+
+    const isHidden = hideBalance && status === 'ACTIVE';
+    const lockExpiry = lockExpiresAt ? new Date(lockExpiresAt) : null;
+    const isLockExpired = lockExpiry ? currentTime > lockExpiry : true;
+    const daysRemaining = lockExpiry && !isLockExpired
+        ? Math.max(0, Math.ceil((lockExpiry.getTime() - currentTime.getTime()) / 86400000))
         : 0;
 
     let progress = 0;
-    if (goal.lock_period_days) {
-        const elapsed = Date.now() - new Date(goal.created_at).getTime();
-        progress = Math.min((elapsed / (goal.lock_period_days * 86400000)) * 100, 100);
-    } else {
-        progress = goal.target_amount > 0 ? Math.min((balance / goal.target_amount) * 100, 100) : 0;
+    if (targetAmount > 0) {
+        progress = Math.min((balance / targetAmount) * 100, 100);
     }
 
     const penaltyPct = 5;
     const penaltyAmount = balance * (penaltyPct / 100);
     const returnAfterPenalty = balance - penaltyAmount;
 
-    const totalInterest = mockInterestHistory.reduce((s, i) => s + i.amount, 0);
     const isNearComplete = progress >= 80;
     const isHalfway = progress >= 50 && progress < 80;
 
-    const handleQuickAdd = (e: React.FormEvent) => {
+    const mainBalance = mainAccount?.current_balance ?? 0;
+
+    const handleAddMoney = (e: React.FormEvent) => {
         e.preventDefault();
-        setAdding(true);
-        setTimeout(() => { setAddAmount(''); setAdding(false); }, 800);
+        const amount = parseFloat(addAmount);
+        if (isNaN(amount) || amount <= 0) return;
+        addMoney(
+            { recipient_account_number: accountNumber, amount, notes },
+            {
+                onSuccess: () => {
+                    toast({
+                        title: 'Added to goal',
+                        description: `Successfully added ${formatCurrency(amount)} to ${name}`,
+                    });
+                    setAddAmount('');
+                    setNotes('');
+                },
+                onError: (err) => {
+                    toast({
+                        title: 'Add failed',
+                        description: err.message,
+                        variant: 'destructive',
+                    });
+                },
+            }
+        );
     };
 
-    const executeBreak = () => {
+    const handleBreak = () => {
         setBreaking(true);
-        setTimeout(() => { setBreaking(false); router.push('/piggy'); }, 800);
+        setTimeout(() => {
+            setBreaking(false);
+            toast({
+                title: 'Feature coming soon',
+                description: 'Breaking piggy will be implemented later.',
+            });
+            router.push('/piggy');
+        }, 800);
     };
-
-    const qrPayload = `piggy:${goal.id}:${goal.name}`;
 
     const quickAddAmounts = [25, 50, 100, 250];
+    const qrPayload = `piggy:${id}:${name}`;
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
-
-            {/* Back button */}
             <button
                 onClick={() => router.push('/piggy')}
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors group"
@@ -117,11 +166,8 @@ export default function PiggyDetail() {
                 transition={{ duration: 0.4 }}
                 className="grid grid-cols-1 lg:grid-cols-3 gap-6"
             >
-
-                {/* ── LEFT COLUMN: hero card + actions ── */}
+                {/* LEFT COLUMN: hero card + actions */}
                 <div className="space-y-4 lg:col-span-1">
-
-                    {/* Hero card */}
                     <div className="relative overflow-hidden glass rounded-2xl p-6">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/5 rounded-full blur-2xl" />
@@ -134,20 +180,25 @@ export default function PiggyDetail() {
                                 <PiggyBank className="w-7 h-7 text-primary-foreground" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-display font-bold text-foreground">{goal.name}</h1>
+                                <h1 className="text-xl font-display font-bold text-foreground">{name}</h1>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className={cn(
                                         'inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full',
-                                        goal.status === 'active' ? 'bg-primary/10 text-primary' :
-                                            goal.status === 'completed' ? 'bg-success/10 text-success' :
+                                        status === 'ACTIVE' ? 'bg-primary/10 text-primary' :
+                                            status === 'COMPLETED' ? 'bg-success/10 text-success' :
                                                 'bg-destructive/10 text-destructive'
                                     )}>
-                                        {goal.status === 'active' && <Zap className="w-2.5 h-2.5" />}
-                                        {goal.status}
+                                        {status === 'ACTIVE' && <CircleDot className="w-2.5 h-2.5" />}
+                                        {status}
                                     </span>
-                                    {goal.lock_period_days && !isLockExpired && (
+                                    {lockExpiresAt && !isLockExpired && (
                                         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
                                             <Lock className="w-2.5 h-2.5" /> Locked
+                                        </span>
+                                    )}
+                                    {hideBalance && status === 'ACTIVE' && (
+                                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted-foreground/20 text-muted-foreground">
+                                            <EyeOff className="w-2.5 h-2.5" /> Hidden
                                         </span>
                                     )}
                                 </div>
@@ -176,11 +227,11 @@ export default function PiggyDetail() {
                                 )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-0.5">
-                                {isHidden ? 'of ••••••' : `of ${formatCurrency(goal.target_amount)}`}
+                                {isHidden ? 'of ••••••' : `of ${formatCurrency(targetAmount)}`}
                             </p>
                         </div>
 
-                        {/* Progress bar with animation */}
+                        {/* Progress bar */}
                         <div className="space-y-1.5">
                             <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Progress</span>
@@ -205,7 +256,7 @@ export default function PiggyDetail() {
                         </div>
 
                         {/* Lock status */}
-                        {goal.lock_period_days && !isLockExpired && (
+                        {lockExpiresAt && !isLockExpired && (
                             <div className="flex items-center gap-2 mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
                                 <Clock className="w-4 h-4 text-amber-500" />
                                 <div className="flex-1">
@@ -216,7 +267,7 @@ export default function PiggyDetail() {
                             </div>
                         )}
 
-                        {isLockExpired && goal.lock_period_days && (
+                        {isLockExpired && lockExpiresAt && (
                             <div className="flex items-center gap-2 mt-4 p-3 rounded-xl bg-success/5 border border-success/20">
                                 <CheckCircle2 className="w-4 h-4 text-success" />
                                 <p className="text-xs font-medium text-success">Lock period completed! You can now break without penalty.</p>
@@ -225,8 +276,8 @@ export default function PiggyDetail() {
                     </div>
 
                     {/* Quick add section */}
-                    {goal.status === 'active' && (
-                        <form onSubmit={handleQuickAdd} className="glass rounded-2xl p-5 space-y-4">
+                    {status === 'ACTIVE' && (
+                        <form onSubmit={handleAddMoney} className="glass rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-2">
                                 <DollarSign className="w-4 h-4 text-primary" />
                                 <Label className="text-sm font-semibold text-foreground">Add Money</Label>
@@ -242,35 +293,51 @@ export default function PiggyDetail() {
                                     required
                                     min="1"
                                     step="0.01"
-                                    className="pl-8 bg-secondary border-border text-foreground text-2xl  font-bold h-14 tabular-nums
-                        [&::-webkit-inner-spin-button]:appearance-none
-                        [&::-webkit-outer-spin-button]:appearance-none
-                        [-moz-appearance:textfield] focus:ring-2 focus:ring-primary/20"
+                                    className="pl-8 bg-secondary border-border text-foreground text-2xl font-bold h-14 tabular-nums
+                                        [&::-webkit-inner-spin-button]:appearance-none
+                                        [&::-webkit-outer-spin-button]:appearance-none
+                                        [-moz-appearance:textfield] focus:ring-2 focus:ring-primary/20"
                                 />
                             </div>
 
-                            <div className="flex gap-2  justify-center flex-wrap">
+                            <div className="flex gap-2 justify-center flex-wrap">
                                 {quickAddAmounts.map(amount => (
                                     <button
                                         key={amount}
                                         type="button"
                                         onClick={() => setAddAmount(String(amount))}
-                                        className="px-4 py-2  rounded-lg  font-medium bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors"
+                                        className="px-4 py-2 rounded-lg font-medium bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors"
                                     >
                                         ${amount}
                                     </button>
                                 ))}
                             </div>
 
+                            <div className="space-y-2">
+                                <Label htmlFor="notes" className="text-xs text-muted-foreground">Notes (optional)</Label>
+                                <Input
+                                    id="notes"
+                                    placeholder="Add a personal note..."
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    className="bg-secondary border-border"
+                                />
+                            </div>
+
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Shield className="w-3 h-3" />
-                                Available: {formatCurrency(mockMainAccountBalance)}
+                                Available: {formatCurrency(mainBalance)}
                             </p>
+
+                            <Button type="submit" variant="hero" className="w-full" disabled={isAdding || !addAmount}>
+                                {isAdding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                Add Money
+                            </Button>
                         </form>
                     )}
 
                     {/* Action buttons */}
-                    {goal.status === 'active' && (
+                    {status === 'ACTIVE' && (
                         <div className="flex flex-col gap-3">
                             <Button
                                 variant="glass"
@@ -296,7 +363,7 @@ export default function PiggyDetail() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle className="flex items-center gap-2">
                                             {!isLockExpired && <AlertTriangle className="w-5 h-5 text-destructive" />}
-                                            Break {goal.name}?
+                                            Break {name}?
                                         </AlertDialogTitle>
                                         <AlertDialogDescription asChild>
                                             <div className="space-y-3">
@@ -317,7 +384,7 @@ export default function PiggyDetail() {
                                                                 <span className="font-semibold">{isHidden ? '••••••' : `-${formatCurrency(penaltyAmount)}`}</span>
                                                             </div>
                                                             <div className="border-t border-destructive/20 pt-1 flex justify-between font-semibold">
-                                                                <span>You wll receive</span>
+                                                                <span>You will receive</span>
                                                                 <span className="text-foreground">{isHidden ? '••••••' : formatCurrency(returnAfterPenalty)}</span>
                                                             </div>
                                                         </div>
@@ -325,7 +392,7 @@ export default function PiggyDetail() {
                                                 ) : (
                                                     <p>
                                                         {isHidden ? 'Your full balance will be returned.' :
-                                                            <>You wll receive <span className="font-semibold text-foreground">{formatCurrency(balance)}</span> back to your main account.</>}
+                                                            <>You will receive <span className="font-semibold text-foreground">{formatCurrency(balance)}</span> back to your main account.</>}
                                                     </p>
                                                 )}
                                                 <p className="text-xs text-muted-foreground">This action cannot be undone.</p>
@@ -334,7 +401,7 @@ export default function PiggyDetail() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={executeBreak} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        <AlertDialogAction onClick={handleBreak} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                             {breaking ? 'Breaking...' : (isLockExpired ? 'Break Piggy' : 'Force Break & Pay Penalty')}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
@@ -359,7 +426,7 @@ export default function PiggyDetail() {
                                 <QRCodeSVG value={qrPayload} size={180} />
                             </div>
                             <p className="text-xs text-muted-foreground text-center">
-                                QR for <span className="font-semibold text-foreground">{goal.name}</span>
+                                QR for <span className="font-semibold text-foreground">{name}</span>
                             </p>
                             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                 <Clock className="w-3 h-3" />
@@ -369,31 +436,29 @@ export default function PiggyDetail() {
                     )}
                 </div>
 
-                {/* ── RIGHT COLUMN: stats + interest history ── */}
+                {/* RIGHT COLUMN: stats + interest history (placeholder) */}
                 <div className="space-y-4 lg:col-span-2">
-
-                    {/* Stat cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[
                             {
                                 icon: Target,
                                 label: 'Target',
-                                value: isHidden ? '••••••' : formatCurrency(goal.target_amount),
-                                sub: isHidden ? '' : `${formatCurrency(goal.target_amount - balance)} remaining`,
+                                value: isHidden ? '••••••' : formatCurrency(targetAmount),
+                                sub: isHidden ? '' : `${formatCurrency(targetAmount - balance)} remaining`,
                                 color: 'bg-primary/10 text-primary',
                             },
                             {
                                 icon: Clock,
-                                label: goal.lock_period_days ? 'Lock Period' : 'Created',
-                                value: goal.lock_period_days ? `${goal.lock_period_days} days` : new Date(goal.created_at).toLocaleDateString(),
-                                sub: goal.lock_period_days && !isLockExpired ? `${daysRemaining}d left` : '',
+                                label: lockExpiresAt ? 'Lock Period' : 'Created',
+                                value: lockExpiresAt ? `${Math.ceil((new Date(lockExpiresAt).getTime() - new Date(createdAt).getTime()) / 86400000)} days` : new Date(createdAt).toLocaleDateString(),
+                                sub: lockExpiresAt && !isLockExpired ? `${daysRemaining}d left` : '',
                                 color: 'bg-amber-500/10 text-amber-500',
                             },
                             {
                                 icon: Gift,
                                 label: 'Interest Earned',
-                                value: isHidden ? '••••••' : formatCurrency(totalInterest),
-                                sub: `${mockInterestHistory.length} payments`,
+                                value: isHidden ? '••••••' : formatCurrency(0),
+                                sub: '0 payments',
                                 color: 'bg-emerald-500/10 text-emerald-500',
                             },
                         ].map(({ icon: Icon, label, value, sub, color }) => (
@@ -415,7 +480,62 @@ export default function PiggyDetail() {
                         ))}
                     </div>
 
-                    {/* Interest history table */}
+                    {/* Configuration summary */}
+                    <div className="glass rounded-2xl p-5 space-y-0 divide-y divide-border">
+                        {[
+                            {
+                                icon: Lock,
+                                label: 'Lock Period',
+                                value: lockExpiresAt && !isLockExpired ? `${daysRemaining} days left` : (lockExpiresAt ? 'Locked (expired)' : 'None'),
+                                accent: false,
+                                tooltip: null,
+                            },
+                            {
+                                icon: CalendarIcon,
+                                label: 'Unlocks On',
+                                value: lockExpiresAt ? new Date(lockExpiresAt).toLocaleDateString() : '—',
+                                accent: false,
+                                tooltip: null,
+                            },
+                            {
+                                icon: EyeOff,
+                                label: 'Hide Balance',
+                                value: hideBalance ? 'On' : 'Off',
+                                accent: hideBalance,
+                                tooltip: hideBalance ? 'Your balance is hidden from your dashboard until the goal is completed or broken.' : null,
+                            },
+                        ].map(({ icon: Icon, label, value, accent, tooltip }) => (
+                            <div key={label} className="flex items-center justify-between py-3">
+                                <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                                    {tooltip ? (
+                                        <TooltipProvider delayDuration={200}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-2.5 cursor-help">
+                                                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                                                        {label}
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-[220px] text-center">
+                                                    <p className="text-xs">{tooltip}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    ) : (
+                                        <div className="flex items-center gap-2.5">
+                                            <Icon className="w-3.5 h-3.5 shrink-0" />
+                                            {label}
+                                        </div>
+                                    )}
+                                </div>
+                                <span className={cn('text-sm font-semibold tabular-nums', accent ? 'text-primary' : 'text-foreground')}>
+                                    {value}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Interest history placeholder */}
                     <div className="glass rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-4">
                             <div>
@@ -425,66 +545,20 @@ export default function PiggyDetail() {
                                 </div>
                                 <p className="text-xs text-muted-foreground">Recent interest payments credited to your piggy</p>
                             </div>
-                            <span className="text-xs font-medium text-primary">{mockInterestHistory.length} payments</span>
+                            <span className="text-xs font-medium text-primary">0 payments</span>
                         </div>
 
-                        {mockInterestHistory.length === 0 ? (
-                            <div className="text-center py-8">
-                                <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">No interest payments yet</p>
-                                <p className="text-xs text-muted-foreground mt-1">Interest is credited weekly</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-1">
-                                {mockInterestHistory.map((entry, i) => (
-                                    <motion.div
-                                        key={entry.id}
-                                        initial={{ opacity: 0, y: 6 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.04 * i }}
-                                        className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-secondary/60 transition-colors group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                                                <TrendingUp className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">Interest Payment</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className="text-sm font-bold text-emerald-500 tabular-nums">
-                                            +{isHidden ? '••••' : formatCurrency(entry.amount)}
-                                        </span>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
+                        <div className="text-center py-8">
+                            <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">No interest payments yet</p>
+                            <p className="text-xs text-muted-foreground mt-1">Interest is credited daily based on lock period</p>
+                        </div>
 
                         <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
                             <span className="text-sm font-semibold text-foreground">Total Interest Earned</span>
                             <span className="text-base font-bold text-primary tabular-nums">
-                                +{isHidden ? '••••' : formatCurrency(totalInterest)}
+                                +{isHidden ? '••••' : formatCurrency(0)}
                             </span>
-                        </div>
-                    </div>
-
-                    {/* Motivational tip */}
-                    <div className="rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-4">
-                        <div className="flex items-start gap-3">
-                            <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-semibold text-foreground">Keep Going!</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {isNearComplete
-                                        ? "You're almost there! Just a little more to reach your goal. 🎉"
-                                        : isHalfway
-                                            ? "Great progress! You're halfway to your goal. Stay consistent! 💪"
-                                            : "Every contribution brings you closer to your dream. You've got this! 🚀"}
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>

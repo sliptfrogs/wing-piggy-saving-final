@@ -8,6 +8,7 @@ export const accountSchema = z.object({
   currency: z.string(),
   current_balance: z.number(),
   is_public: z.boolean(),
+  hide_balance: z.boolean(),
   piggy_goal_id: z.string().nullable(),
   public: z.boolean(),
   updated_at: z.string().datetime().nullable(),

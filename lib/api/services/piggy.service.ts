@@ -1,9 +1,9 @@
 // lib/api/services/piggy.service.ts
 
-import { CreatePiggyRequest, PiggyGoal } from '@/lib/types/piggy';
-import { apiClient } from '../client';
-import { API_ENDPOINTS } from '../endpoints';
-
+import { CreatePiggyRequest, PiggyGoal } from "@/lib/types/piggy";
+import { apiClient } from "../client";
+import { API_ENDPOINTS } from "../endpoints";
+import { PiggyGoalDetail } from "@/types/piggy-goal-detail";
 
 /**
  * Response structure for create/update operations.
@@ -18,9 +18,8 @@ export const piggyService = {
   /**
    * Fetch all piggy goals for the current user.
    */
-  getAll: (): Promise<PiggyGoal[]> =>
-    apiClient.get<PiggyGoal[]>(API_ENDPOINTS.piggy.list),
-
+  getAll: (): Promise<PiggyGoalDetail[]> =>
+    apiClient.get<PiggyGoalDetail[]>(API_ENDPOINTS.piggy.list),
 
   /**
    * Create a new piggy goal.
@@ -31,11 +30,19 @@ export const piggyService = {
     const response = await apiClient.post<PiggyGoalResponse>(
       API_ENDPOINTS.piggy.create,
       data,
-      { requiresAuth: true }
+      { requiresAuth: true },
     );
     return response.piggyGoal;
   },
-
- 
-
+  getByAccountNumber: async (
+    token: string,
+    accountNumber: string,
+  ): Promise<PiggyGoalDetail> => {
+    return apiClient.get<PiggyGoalDetail>(
+      API_ENDPOINTS.piggy.get_by_accountNumber(accountNumber),
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
 };

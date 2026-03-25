@@ -11,32 +11,16 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useTransactions } from '@/hooks/api/useTransaction';
+import { TransactionResponseDto } from '@/lib/zod/transaction-response';
+
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 type SortKey = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
-type FilterType = 'all' | 'p2p' | 'contribution' | 'deposit' | 'transfer';
+type FilterType = 'all' | 'interest' | 'p2p' | 'contribution' | 'deposit' | 'transfer';
 
-// API transaction shape (adjust fields to match your API)
-interface ApiTransaction {
-    transaction_id: string;
-    transaction_type: string;
-    amount: number;
-    entry_type: string; // "CREDIT" or "DEBIT"
-    status: string;
-    created_at: string;
-    from_account_mask?: string;
-    to_account_mask?: string;
-    counterparty_name?: string;
-    goal_name?: string;
-    metadata?: { description?: string };
-}
-
-// UI transaction shape
 interface UITransaction {
     id: string;
     type: FilterType;
@@ -54,7 +38,7 @@ interface UITransaction {
 const typeMap: Record<string, FilterType> = {
     'P2P_TRANSFER': 'p2p',
     'GOAL_CONTRIBUTION': 'contribution',
-    // Add other mappings as needed
+    'INTEREST': 'interest',
 };
 
 const typeConfig: Record<FilterType, { icon: typeof ArrowUpRight; color: string; label: string }> = {
@@ -62,13 +46,14 @@ const typeConfig: Record<FilterType, { icon: typeof ArrowUpRight; color: string;
     contribution: { icon: Heart, color: 'bg-accent/10 text-accent', label: 'Contribution' },
     deposit: { icon: ArrowDownLeft, color: 'bg-success/10 text-success', label: 'Deposit' },
     transfer: { icon: ArrowUpRight, color: 'bg-primary/10 text-primary', label: 'Transfer' },
+    interest: { icon: Percent, color: 'bg-warning/10 text-warning', label: 'Interest' },
     all: { icon: Filter, color: 'bg-secondary text-muted-foreground', label: 'All' },
 };
 
-function mapApiTransaction(tx: ApiTransaction): UITransaction {
+function mapTransactionToUI(tx: TransactionResponseDto): UITransaction {
     const uiType = typeMap[tx.transaction_type] || 'transfer';
     const isCredit = tx.entry_type === 'CREDIT';
-    const description = tx.metadata?.description ||
+    const description = tx.description ||
         (uiType === 'contribution' ? 'Contribution to Goal' :
             uiType === 'p2p' ? 'P2P Transfer' : 'Transaction');
 
@@ -87,8 +72,6 @@ function mapApiTransaction(tx: ApiTransaction): UITransaction {
     };
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function TransactionHistory() {
     const [page, setPage] = useState(0);
     const pageSize = 10;
@@ -100,13 +83,11 @@ export default function TransactionHistory() {
     const [searchQuery, setSearchQuery] = useState('');
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-    // Convert API data to transactions array
     const transactions: UITransaction[] = useMemo(() => {
         if (!pageData?.content) return [];
-        return pageData.content.map(mapApiTransaction);
+        return pageData.content.map(mapTransactionToUI);
     }, [pageData]);
 
-    // Client‑side filtering & sorting
     const filtered: UITransaction[] = useMemo(() => {
         let list = filterType === 'all'
             ? transactions
@@ -128,7 +109,7 @@ export default function TransactionHistory() {
                     return b.amount - a.amount;
                 case 'amount-asc':
                     return a.amount - b.amount;
-                default: // date-desc
+                default:
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
             }
         });
@@ -183,8 +164,6 @@ export default function TransactionHistory() {
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
-
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-display font-bold text-foreground">Transaction History</h1>
@@ -205,7 +184,6 @@ export default function TransactionHistory() {
                 </div>
             </div>
 
-            {/* Summary cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
                     { label: 'Total In', value: formatCurrency(summary.totalIn), icon: TrendingUp, color: 'bg-success/10 text-success' },
@@ -230,8 +208,6 @@ export default function TransactionHistory() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 sm:gap-6">
-
-                {/* Desktop filters sidebar */}
                 <aside className="hidden lg:block lg:col-span-4 space-y-4">
                     <div className="glass rounded-2xl p-5 sticky top-24 transition-all hover:shadow-md">
                         <div className="flex items-center gap-2 mb-5 pb-2 border-b border-border/50">
@@ -290,21 +266,9 @@ export default function TransactionHistory() {
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        {(filterType !== 'all' || searchQuery) && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full mt-3 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => { setFilterType('all'); setSearchQuery(''); }}
-                            >
-                                <X className="w-3 h-3 mr-1.5" /> Clear all filters
-                            </Button>
-                        )}
                     </div>
                 </aside>
 
-                {/* Mobile filters popover */}
                 <AnimatePresence>
                     {mobileFiltersOpen && (
                         <motion.div
@@ -364,7 +328,6 @@ export default function TransactionHistory() {
                     )}
                 </AnimatePresence>
 
-                {/* Transaction list */}
                 <div className="lg:col-span-4">
                     {filtered.length === 0 ? (
                         <motion.div
@@ -373,7 +336,6 @@ export default function TransactionHistory() {
                             transition={{ duration: 0.4 }}
                             className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-background to-secondary/5 border border-border/50 shadow-lg"
                         >
-                            {/* Subtle grid pattern */}
                             <div className="absolute inset-0 opacity-30">
                                 <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
                                     <defs>
@@ -384,26 +346,18 @@ export default function TransactionHistory() {
                                     <rect width="100%" height="100%" fill="url(#grid)" />
                                 </svg>
                             </div>
-
                             <div className="relative z-10 px-6 py-12 sm:px-12 sm:py-16 text-center">
-                                {/* Icon container */}
                                 <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-secondary/20 backdrop-blur-sm flex items-center justify-center mb-5 border border-border/50 shadow-inner">
                                     <Search className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground/60" strokeWidth={1.5} />
                                 </div>
-
-                                {/* Title */}
                                 <h3 className="text-xl sm:text-2xl font-medium tracking-tight text-foreground mb-2">
                                     {filterType !== 'all' || searchQuery ? 'No results' : 'Your journey starts here'}
                                 </h3>
-
-                                {/* Description */}
                                 <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6 leading-relaxed">
                                     {filterType !== 'all' || searchQuery
                                         ? "We couldn't find any transactions matching your current filters. Try a different combination."
                                         : "When you make a transfer or receive money, transactions will appear here."}
                                 </p>
-
-                                {/* Clear filters button (only when filters are active) */}
                                 {(filterType !== 'all' || searchQuery) && (
                                     <Button
                                         variant="outline"
@@ -430,7 +384,7 @@ export default function TransactionHistory() {
                                         </div>
                                         <div className="space-y-2">
                                             {txs.map((tx, i) => {
-                                                const cfg = typeConfig[tx.type]; // now tx.type is guaranteed to be a key of typeConfig
+                                                const cfg = typeConfig[tx.type];
                                                 const Icon = cfg.icon;
                                                 return (
                                                     <motion.div
@@ -475,23 +429,14 @@ export default function TransactionHistory() {
                                 ))}
                             </div>
 
-                            {/* Pagination */}
                             <div className="flex items-center justify-between mt-8 pt-4 border-t border-border">
-                                <Button
-                                    variant="outline"
-                                    onClick={handlePrevPage}
-                                    disabled={!hasPrev || isFetching}
-                                >
+                                <Button variant="outline" onClick={handlePrevPage} disabled={!hasPrev || isFetching}>
                                     Previous
                                 </Button>
                                 <span className="text-sm text-muted-foreground">
                                     Page {page + 1} of {totalPages}
                                 </span>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleNextPage}
-                                    disabled={!hasNext || isFetching}
-                                >
+                                <Button variant="outline" onClick={handleNextPage} disabled={!hasNext || isFetching}>
                                     Next
                                 </Button>
                             </div>
