@@ -28,7 +28,6 @@ export const qrService = {
         `${API_ENDPOINTS.qr.validate}?qrBase64=${encodeURIComponent(qrBase64)}`,
         { headers: { Authorization: `Bearer ${token}` } }
     );
-
     return data; // already unwrapped
 },
 };

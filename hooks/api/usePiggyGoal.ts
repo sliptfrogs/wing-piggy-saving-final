@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import { piggyService } from '@/lib/api/services/piggy.service';
-import { piggyKeys } from '@/lib/queryKeys';
-import { PiggyGoal, CreatePiggyRequest } from '@/lib/types/piggy';
-import { PiggyGoalDetail } from '@/types/piggy-goal-detail';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { piggyService } from "@/lib/api/services/piggy.service";
+import { piggyKeys } from "@/lib/queryKeys";
+import { PiggyGoal, CreatePiggyRequest } from "@/lib/types/piggy";
+import { PiggyGoalDetail } from "@/types/piggy-goal-detail";
 
 /**
  * Fetch all piggy goals for the current user (list page).
@@ -44,6 +44,29 @@ export const useCreatePiggyGoal = () => {
   return useMutation({
     mutationFn: (data: CreatePiggyRequest) => piggyService.create(data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
+    },
+  });
+};
+
+/**
+ * Update a piggy to public.
+ */
+export const useUpdatePiggyPublic = () => {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { accountNumber: string; isPublic: boolean }) =>
+      piggyService.update_public(session!.accessToken!, data.accountNumber, {
+        is_public: data.isPublic,
+      }),
+    onSuccess: (_, variables) => {
+      // Invalidate the specific piggy goal query to refresh the detail page
+      queryClient.invalidateQueries({
+        queryKey: piggyKeys.byAccount(variables.accountNumber),
+      });
+      // Also invalidate the list if you want the list to reflect the change
       queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
     },
   });

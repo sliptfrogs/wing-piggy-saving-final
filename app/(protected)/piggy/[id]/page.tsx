@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -17,11 +18,10 @@ import {
     ArrowLeft, QrCode, PiggyBank, Hammer,
     Lock, EyeOff, AlertTriangle, Info, TrendingUp, Target,
     Sparkles, Clock, Gift, Shield, Zap, DollarSign, CheckCircle2, Loader2,
-    CircleDot,
-    CalendarIcon
+    CircleDot, CalendarIcon, Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { usePiggyGoalByAccountNumber } from '@/hooks/api/usePiggyGoal';
+import { usePiggyGoalByAccountNumber, useUpdatePiggyPublic } from '@/hooks/api/usePiggyGoal';
 import { useMainAccount } from '@/hooks/api/useAccount';
 import { useTransferOwnPiggy } from '@/hooks/api/useTransfer';
 import { toast } from '@/hooks/use-toast';
@@ -50,6 +50,7 @@ export default function PiggyDetail() {
     const { data: piggyGoal, isLoading, error } = usePiggyGoalByAccountNumber(accountNumber);
     const { data: mainAccount } = useMainAccount();
     const { mutate: addMoney, isPending: isAdding } = useTransferOwnPiggy();
+    const { mutate: updatePublic, isPending: isUpdatingPublic } = useUpdatePiggyPublic();
 
     const [showQR, setShowQR] = useState(false);
     const [addAmount, setAddAmount] = useState('');
@@ -150,6 +151,29 @@ export default function PiggyDetail() {
 
     const quickAddAmounts = [25, 50, 100, 250];
     const qrPayload = `piggy:${id}:${name}`;
+
+    const handlePublicToggle = (checked: boolean) => {
+        updatePublic(
+            { accountNumber, isPublic: checked },
+            {
+                onSuccess: () => {
+                    toast({
+                        title: checked ? 'Goal is now public' : 'Goal is now private',
+                        description: checked
+                            ? 'Others can now find and contribute to this goal.'
+                            : 'This goal is now private. Only you can see it.',
+                    });
+                },
+                onError: (err) => {
+                    toast({
+                        title: 'Update failed',
+                        description: err.message,
+                        variant: 'destructive',
+                    });
+                },
+            }
+        );
+    };
 
     return (
         <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
@@ -436,7 +460,7 @@ export default function PiggyDetail() {
                     )}
                 </div>
 
-                {/* RIGHT COLUMN: stats + interest history (placeholder) */}
+                {/* RIGHT COLUMN: stats + interest history */}
                 <div className="space-y-4 lg:col-span-2">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[
@@ -504,6 +528,13 @@ export default function PiggyDetail() {
                                 accent: hideBalance,
                                 tooltip: hideBalance ? 'Your balance is hidden from your dashboard until the goal is completed or broken.' : null,
                             },
+                            {
+                                icon: Globe,
+                                label: 'Visibility',
+                                value: isPublic ? 'Public' : 'Private',
+                                accent: isPublic,
+                                tooltip: isPublic ? 'Anyone can find and contribute to this goal' : 'Only you can see this goal',
+                            },
                         ].map(({ icon: Icon, label, value, accent, tooltip }) => (
                             <div key={label} className="flex items-center justify-between py-3">
                                 <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
@@ -528,9 +559,22 @@ export default function PiggyDetail() {
                                         </div>
                                     )}
                                 </div>
-                                <span className={cn('text-sm font-semibold tabular-nums', accent ? 'text-primary' : 'text-foreground')}>
-                                    {value}
-                                </span>
+                                {label === 'Visibility' ? (
+                                    <div className="flex items-center gap-2">
+                                        <Switch
+                                            checked={isPublic}
+                                            onCheckedChange={handlePublicToggle}
+                                            disabled={isUpdatingPublic}
+                                        />
+                                        <span className="text-xs text-muted-foreground">
+                                            {isPublic ? 'Anyone can contribute' : 'Only you can see'}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className={cn('text-sm font-semibold tabular-nums', accent ? 'text-primary' : 'text-foreground')}>
+                                        {value}
+                                    </span>
+                                )}
                             </div>
                         ))}
                     </div>

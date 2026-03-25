@@ -4,6 +4,7 @@ import { CreatePiggyRequest, PiggyGoal } from "@/lib/types/piggy";
 import { apiClient } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import { PiggyGoalDetail } from "@/types/piggy-goal-detail";
+import { UpdatePiggyPublicRequest } from "@/types/update-piggy-public";
 
 /**
  * Response structure for create/update operations.
@@ -43,6 +44,17 @@ export const piggyService = {
       {
         headers: { Authorization: `Bearer ${token}` },
       },
+    );
+  },
+  update_public: async (
+    token: string,
+    accountNumber: string,
+    data: UpdatePiggyPublicRequest,
+  ): Promise<PiggyGoalDetail> => {
+    return apiClient.patch<PiggyGoalDetail>(
+      API_ENDPOINTS.piggy.update_public(accountNumber),
+      data,
+      { headers: { Authorization: `Bearer ${token}` } },
     );
   },
 };

@@ -22,7 +22,7 @@ export const API_ENDPOINTS = {
     list: '/piggy',
     create: '/piggy',
     get_by_accountNumber: (accountNumber: string) => `/piggy/by-account/${accountNumber}`,
-    update: (id: string) => `/piggy/${id}`,
+    update_public: (accountNumber: string) => `/piggy/${accountNumber}`,
     delete: (id: string) => `/piggy/${id}`,
   },
   transaction: {
