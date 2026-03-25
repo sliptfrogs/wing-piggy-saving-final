@@ -430,15 +430,21 @@ export default function TransactionHistory() {
                             </div>
 
                             <div className="flex items-center justify-between mt-8 pt-4 border-t border-border">
-                                <Button variant="outline" onClick={handlePrevPage} disabled={!hasPrev || isFetching}>
-                                    Previous
-                                </Button>
+                                {
+                                    hasPrev &&
+                                    <Button variant="outline" onClick={handlePrevPage} disabled={!hasPrev || isFetching}>
+                                        Previous
+                                    </Button>
+                                }
                                 <span className="text-sm text-muted-foreground">
                                     Page {page + 1} of {totalPages}
                                 </span>
-                                <Button variant="outline" onClick={handleNextPage} disabled={!hasNext || isFetching}>
-                                    Next
-                                </Button>
+                                {
+                                    hasNext &&
+                                    <Button variant="outline" onClick={handleNextPage} disabled={!hasNext || isFetching}>
+                                        Next
+                                    </Button>
+                                }
                             </div>
                         </>
                     )}
