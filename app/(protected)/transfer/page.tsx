@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/select";
 import { useAccountLookup } from '@/hooks/api/useAccountLookup';
 import { useTransferByP2P, useTransferContribute, useTransferOwnPiggy } from '@/hooks/api/useTransfer';
-import { useMainAccount, useListPiggyAccounts } from '@/hooks/api/useAccount';
+import { useMainAccount } from '@/hooks/api/useAccount';
+import { usePiggyGoals } from '@/hooks/api/usePiggyGoal'; // updated import
 import { toast } from '@/hooks/use-toast';
 
 function formatCurrency(n: number) {
@@ -36,14 +37,14 @@ export default function Transfer() {
     const [type, setType] = useState<TransferType>('own-piggy');
     const [amount, setAmount] = useState('');
     const [selectedPiggy, setSelectedPiggy] = useState('');
-    const [selectedPiggyAccountNumber, setSelectedPiggyAccountNumber] = useState(''); // store account number
+    const [selectedPiggyAccountNumber, setSelectedPiggyAccountNumber] = useState('');
     const [recipientAccountNumber, setRecipientAccountNumber] = useState('');
     const [searchAccountNumber, setSearchAccountNumber] = useState('');
     const [notes, setNotes] = useState('');
 
     // Real data
     const { data: mainAccount, isLoading: balanceLoading, error: balanceError } = useMainAccount();
-    const { data: piggyAccounts, isLoading: piggyLoading, error: piggyError } = useListPiggyAccounts();
+    const { data: piggyGoals, isLoading: piggyLoading, error: piggyError } = usePiggyGoals(); // usePiggyGoals
 
     // Account lookup for P2P/Contribute
     const accountTypeParam = type === 'p2p' ? 'MAIN' : type === 'contribute' ? 'PIGGY' : undefined;
@@ -59,12 +60,12 @@ export default function Transfer() {
     const { mutate: transferOwnPiggy, isPending: isOwnPiggyPending } = useTransferOwnPiggy();
 
     const mainBalance = mainAccount?.current_balance ?? 0;
-    const activeGoals = (piggyAccounts || []).map(account => ({
-        id: account.piggy_goal_id,
-        name: account.goal_name,
-        target_amount: account.target_amount,
-        current_balance: account.current_balance,
-        account_number: account.account_number, // include account number
+    const activeGoals = (piggyGoals || []).map(goal => ({
+        id: goal.id,
+        name: goal.name,
+        target_amount: goal.target_amount,
+        current_balance: goal.current_balance,
+        account_number: goal.account_number,
     }));
 
     const selectedGoal = activeGoals.find(g => g.id === selectedPiggy);
@@ -125,9 +126,7 @@ export default function Transfer() {
                 toast({ title: 'Error', description: 'No recipient found', variant: 'destructive' });
                 return;
             }
-
             const recipientAccountNumber = recipientData.account_number;
-
             transferP2P(
                 { recipient_account_number: recipientAccountNumber, amount: amt },
                 {
@@ -142,27 +141,18 @@ export default function Transfer() {
                 }
             );
         } else if (type === 'contribute') {
-            // TypeScript knows recipientData exists because canSubmit checked it
-            // Use non-null assertion or explicit check
             if (!recipientData) {
-                toast({
-                    title: 'Error',
-                    description: 'No recipient found',
-                    variant: 'destructive',
-                });
+                toast({ title: 'Error', description: 'No recipient found', variant: 'destructive' });
                 return;
             }
-
             const recipientAccountNumber = recipientData.account_number;
-            const recipientNumber = recipientData.account_number;
-
             transferContribute(
                 { recipient_account_number: recipientAccountNumber, amount: amt, notes },
                 {
                     onSuccess: () => {
                         toast({
                             title: 'Contribution successful',
-                            description: `Contributed ${formatCurrency(amt)} to account ${recipientNumber}${notes ? ` with note: "${notes}"` : ''}`,
+                            description: `Contributed ${formatCurrency(amt)} to account ${recipientAccountNumber}${notes ? ` with note: "${notes}"` : ''}`,
                         });
                         router.push('/');
                     },
@@ -200,7 +190,6 @@ export default function Transfer() {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6">
-                {/* LEFT: type + form */}
                 <div className="xl:col-span-2 space-y-5 sm:space-y-6">
                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {tabs.map(({ type: t, icon: Icon, label, desc }) => (
@@ -219,7 +208,7 @@ export default function Transfer() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-                        {/* Recipient search (for P2P and Contribute) */}
+                        {/* Recipient search for P2P/Contribute */}
                         <AnimatePresence mode="wait">
                             {(type === 'p2p' || type === 'contribute') && (
                                 <motion.div
@@ -389,8 +378,9 @@ export default function Transfer() {
                     </form>
                 </div>
 
-                {/* RIGHT: summary panel */}
+                {/* Right panel summary */}
                 <div className="xl:col-span-1 space-y-4 mt-4 xl:mt-0">
+                    {/* Balance card */}
                     <div className="glass rounded-2xl p-4 sm:p-5">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2 sm:mb-3">Available Balance</p>
                         {balanceLoading ? (

@@ -5,57 +5,68 @@ import { useRouter } from 'next/navigation';
 import {
     Eye, EyeOff, Plus, ArrowUpRight, ArrowDownLeft,
     PiggyBank, QrCode, Users, TrendingUp, ChevronRight, Bell,
-    Wallet, Target, Clock, Calendar, Sparkles
+    Wallet, Target, Clock, Calendar, Sparkles, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import {  useMainAccount } from '@/hooks/api/useAccount';
-import { useSession } from 'next-auth/react';
+import { useMainAccount } from '@/hooks/api/useAccount';
+import { usePiggyGoals } from '@/hooks/api/usePiggyGoal';
+import { useTransactions } from '@/hooks/api/useTransaction';
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
+// Map API transaction type to icon and display type
 function getTransactionIcon(type: string) {
     switch (type) {
-        case 'transfer': return <ArrowUpRight className="w-4 h-4" />;
-        case 'p2p': return <Users className="w-4 h-4" />;
-        case 'contribution': return <PiggyBank className="w-4 h-4" />;
-        case 'deposit': return <ArrowDownLeft className="w-4 h-4" />;
-        default: return <ArrowUpRight className="w-4 h-4" />;
+        case 'P2P_TRANSFER':
+            return <Users className="w-4 h-4" />;
+        case 'GOAL_CONTRIBUTION':
+            return <PiggyBank className="w-4 h-4" />;
+        case 'DEPOSIT':
+            return <ArrowDownLeft className="w-4 h-4" />;
+        default:
+            return <ArrowUpRight className="w-4 h-4" />;
     }
 }
 
-const mockPiggyGoals = [
-    { id: '1', name: 'New Laptop', target_amount: 1500, status: 'active', hide_balance: false, accounts: [{ balance: 890.25 }] },
-    { id: '2', name: 'Vacation Fund', target_amount: 3000, status: 'active', hide_balance: false, accounts: [{ balance: 1250.00 }] },
-    { id: '3', name: 'Emergency Fund', target_amount: 5000, status: 'active', hide_balance: false, accounts: [{ balance: 2100.00 }] },
-];
-
-const mockTransactions = [
-    { id: 'tx1', type: 'deposit', description: 'Salary Deposit', amount: 2500.00, created_at: new Date().toISOString() },
-    { id: 'tx2', type: 'transfer', description: 'Transfer to Savings', amount: 200.00, created_at: new Date(Date.now() - 86400000).toISOString() },
-    { id: 'tx3', type: 'p2p', description: 'Paid to Jane', amount: 45.50, created_at: new Date(Date.now() - 172800000).toISOString() },
-    { id: 'tx4', type: 'contribution', description: 'Piggy contribution', amount: 100.00, created_at: new Date(Date.now() - 259200000).toISOString() },
-    { id: 'tx5', type: 'deposit', description: 'Refund', amount: 30.00, created_at: new Date(Date.now() - 345600000).toISOString() },
-];
+function getTransactionLabel(type: string) {
+    switch (type) {
+        case 'P2P_TRANSFER':
+            return 'P2P Transfer';
+        case 'GOAL_CONTRIBUTION':
+            return 'Goal Contribution';
+        case 'DEPOSIT':
+            return 'Deposit';
+        default:
+            return 'Transfer';
+    }
+}
 
 export default function Dashboard() {
     const [showBalance, setShowBalance] = useState(true);
 
-    const { data: mainAccount, isLoading, error } = useMainAccount();
-    const session = useSession();
+    const { data: mainAccount, isLoading: balanceLoading, error: balanceError } = useMainAccount();
 
-    const displayName = session?.data?.user?.email?.split('@')[0] || 'Guest';
 
+
+
+    const { data: piggyGoals, isLoading: goalsLoading, error: goalsError } = usePiggyGoals();
+    const { data: transactionsData, isLoading: txLoading, error: txError } = useTransactions(0, 5);
+
+    const displayName = mainAccount?.username;
 
     const router = useRouter();
 
     const h = new Date().getHours();
     const greeting = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
 
-    const activeGoals = mockPiggyGoals.filter(g => g.status === 'active');
-    const recentTx = mockTransactions.slice(0, 5);
+    const activeGoals = (piggyGoals || []).filter(g => g.status === 'ACTIVE');
+    const totalSaved = activeGoals.reduce((sum, g) => sum + (g.current_balance || 0), 0);
+    const activeCount = activeGoals.length;
+
+    const recentTx = transactionsData?.content?.slice(0, 5) || [];
 
     const quickActions = [
         { icon: ArrowUpRight, label: 'Transfer', path: '/transfer', color: 'bg-blue-500/10 text-blue-500', gradient: 'from-blue-500 to-blue-600' },
@@ -65,10 +76,24 @@ export default function Dashboard() {
     ];
 
     const stats = [
-        { label: 'Total Balance', value: formatCurrency(mainAccount?.current_balance ?? 0), icon: Wallet, trend: '+12.4%', color: 'text-primary' },
+        { label: 'Total Saved', value: formatCurrency(totalSaved), icon: Wallet, trend: '+12.4%', color: 'text-primary' },
         { label: 'Monthly Spend', value: '$345.50', icon: TrendingUp, trend: '-8.2%', color: 'text-muted-foreground' },
-        { label: 'Active Goals', value: '3', icon: Target, trend: '+1 this month', color: 'text-emerald-500' },
+        { label: 'Active Goals', value: activeCount.toString(), icon: Target, trend: '+1 this month', color: 'text-emerald-500' },
     ];
+
+    // Loading states
+    if (balanceLoading || goalsLoading || txLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    // Error handling (optional: show toast or fallback)
+    // if (balanceError || goalsError || txError) {
+    //   // you can show an error message
+    // }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
@@ -89,10 +114,6 @@ export default function Dashboard() {
 
                     {/* Quick Stats Badges */}
                     <div className="flex gap-2">
-                        <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" />
-                            Premium
-                        </div>
                         <div className="px-3 py-1.5 rounded-full bg-secondary text-muted-foreground text-xs font-medium flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -166,51 +187,38 @@ export default function Dashboard() {
                         </div>
                     </motion.div>
 
-                    {/* Stats Cards - Horizontal on desktop, stacked on mobile */}
+                    {/* Stats Cards */}
                     <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-1 lg:gap-4">
-                        {stats.map((stat, i) => {
-                            // Compute real total saved (sum of piggy balances)
-                            const totalSaved = mockPiggyGoals.reduce((sum, goal) => sum + (goal.accounts?.[0]?.balance || 0), 0);
-
-                            // Replace "Total Balance" with "Total Saved" for more relevance
-                            let displayLabel = stat.label;
-                            let displayValue = stat.value;
-                            if (stat.label === 'Total Balance') {
-                                displayLabel = 'Total Saved';
-                                displayValue = formatCurrency(totalSaved);
-                            }
-
-                            return (
-                                <motion.div
-                                    key={displayLabel}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.4, delay: 0.1 * (i + 1) }}
-                                    className="glass rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
-                                    onClick={() => {
-                                        if (displayLabel === 'Total Saved') router.push('/piggy');
-                                        if (displayLabel === 'Monthly Spend') router.push('/history');
-                                        if (displayLabel === 'Active Goals') router.push('/piggy');
-                                    }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-xl ${stat.color} bg-opacity-10 flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                                            <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">{displayLabel}</p>
-                                            <p className="text-lg font-bold text-foreground">{displayValue}</p>
-                                        </div>
+                        {stats.map((stat, i) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.4, delay: 0.1 * (i + 1) }}
+                                className="glass rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
+                                onClick={() => {
+                                    if (stat.label === 'Total Saved') router.push('/piggy');
+                                    if (stat.label === 'Monthly Spend') router.push('/history');
+                                    if (stat.label === 'Active Goals') router.push('/piggy');
+                                }}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl ${stat.color} bg-opacity-10 flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
                                     </div>
-                                    <div className="flex flex-col items-end">
-                                        <span className={`text-xs font-medium ${stat.trend.startsWith('+') ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                            {stat.trend}
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground/60 mt-0.5">vs last month</span>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                                        <p className="text-lg font-bold text-foreground">{stat.value}</p>
                                     </div>
-                                </motion.div>
-                            );
-                        })}
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className={`text-xs font-medium ${stat.trend.startsWith('+') ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                        {stat.trend}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground/60 mt-0.5">vs last month</span>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
 
@@ -261,7 +269,7 @@ export default function Dashboard() {
                                         <Target className="w-4 h-4 text-primary" />
                                         <h3 className="font-display font-semibold text-foreground">Saving Goals</h3>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{activeGoals.length} active • Track your progress</p>
+                                    <p className="text-xs text-muted-foreground">{activeCount} active • Track your progress</p>
                                 </div>
                                 <Button
                                     variant="ghost"
@@ -286,9 +294,11 @@ export default function Dashboard() {
                             ) : (
                                 <div className="space-y-3">
                                     {activeGoals.map((goal, i) => {
-                                        const balance = goal.accounts?.[0]?.balance || 0;
-                                        const progress = Math.min((balance / goal.target_amount) * 100, 100);
+                                        const balance = goal.current_balance;
+                                        const target = goal.target_amount;
+                                        const progress = target > 0 ? Math.min((balance / target) * 100, 100) : 0;
                                         const isNearComplete = progress >= 80;
+                                        const hideBalance = goal.hide_balance;
 
                                         return (
                                             <motion.div
@@ -296,7 +306,7 @@ export default function Dashboard() {
                                                 initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 transition={{ delay: 0.05 * i }}
-                                                onClick={() => router.push(`/piggy/${goal.id}`)}
+                                                onClick={() => router.push(`/piggy/${goal.account_number}`)} // using account number for routing
                                                 className="group cursor-pointer rounded-xl p-4 bg-background border border-border hover:border-primary/40 hover:shadow-md transition-all"
                                             >
                                                 <div className="flex items-center justify-between mb-3">
@@ -307,7 +317,7 @@ export default function Dashboard() {
                                                         <div className="flex-1">
                                                             <p className="text-sm font-semibold text-foreground">{goal.name}</p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                {goal.hide_balance ? '••••' : formatCurrency(balance)} of {formatCurrency(goal.target_amount)}
+                                                                {hideBalance ? '••••' : formatCurrency(balance)} of {hideBalance ? '••••' : formatCurrency(target)}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -374,34 +384,39 @@ export default function Dashboard() {
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    {recentTx.map((tx, i) => (
-                                        <motion.div
-                                            key={tx.id}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.05 * i }}
-                                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/60 transition-all cursor-pointer group"
-                                        >
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tx.type === 'deposit' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary text-muted-foreground'
-                                                } group-hover:scale-105 transition-transform`}>
-                                                {getTransactionIcon(tx.type)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-foreground truncate">{tx.description || tx.type}</p>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                    </p>
-                                                    <span className="text-xs text-muted-foreground capitalize">• {tx.type}</span>
+                                    {recentTx.map((tx, i) => {
+                                        const isCredit = tx.entry_type === 'CREDIT';
+                                        return (
+                                            <motion.div
+                                                key={tx.transaction_id}
+                                                initial={{ opacity: 0, y: 8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.05 * i }}
+                                                className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/60 transition-all cursor-pointer group"
+                                            >
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isCredit ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary text-muted-foreground'
+                                                    } group-hover:scale-105 transition-transform`}>
+                                                    {getTransactionIcon(tx.transaction_type)}
                                                 </div>
-                                            </div>
-                                            <div className="text-right shrink-0">
-                                                <p className={`text-sm font-bold tabular-nums ${tx.type === 'deposit' ? 'text-emerald-500' : 'text-foreground'}`}>
-                                                    {tx.type === 'deposit' ? '+' : '−'}{formatCurrency(tx.amount)}
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-foreground truncate">
+                                                        {tx.metadata?.description || getTransactionLabel(tx.transaction_type)}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                        </p>
+                                                        <span className="text-xs text-muted-foreground capitalize">• {getTransactionLabel(tx.transaction_type)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className={`text-sm font-bold tabular-nums ${isCredit ? 'text-emerald-500' : 'text-foreground'}`}>
+                                                        {isCredit ? '+' : '−'}{formatCurrency(tx.amount)}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

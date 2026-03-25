@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,16 +15,15 @@ import {
     PiggyBank, Camera, Upload, X, User, ArrowRight,
     CheckCircle2, Info, AlertCircle, ScanLine, DollarSign,
     RefreshCw, Sparkles, Shield, Zap, Image as ImageIcon, Loader2,
-    Check,
-    MoveUpRight
+    Check, MoveUpRight, Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransfer } from '@/hooks/api/useTransfer';
-import { qrService } from '@/lib/api/services/qr.service';
 import { useToast } from '@/hooks/use-toast';
 import { useMainAccount } from '@/hooks/api/useAccount';
+import { useQRValidation } from '@/hooks/api/useQr';
 
-// Zod schema for transfer form
+
 const transferSchema = z.object({
     amount: z.string()
         .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -58,16 +57,17 @@ export default function QRScanner() {
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [qrBase64, setQrBase64] = useState<string | null>(null);
-    const [recipientInfo, setRecipientInfo] = useState<{ type: string; accountNumber: string } | null>(null);
+    const [recipientInfo, setRecipientInfo] = useState<{ type: string; accountNumber: string; expiresAt: string } | null>(null);
     const [transferError, setTransferError] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    const [validating, setValidating] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [searchQr, setSearchQr] = useState('');
 
     const { mutate: transfer, isPending: isTransferring } = useTransfer();
+    const { data: validation, isLoading: validating, error: validationQueryError } = useQRValidation(searchQr);
 
     const {
         register,
@@ -104,45 +104,39 @@ export default function QRScanner() {
 
     useEffect(() => () => { stopScanner(); }, [stopScanner]);
 
-    // Shared validation function – also checks for self‑transfer
-    const validateAndProceed = async (decodedText: string) => {
-        if (validating) return;
-        setValidating(true);
-        setValidationError(null);
-        try {
-            const token = session?.accessToken;
-            if (!token) throw new Error('No access token');
-
-            const validation = await qrService.validateQR(token, decodedText);
-
-            // Self‑transfer check: prevent sending to your own main account
+    // When validation succeeds
+    useEffect(() => {
+        if (validation) {
+            // Self‑transfer check
             if (mainAccount && validation.recipientAccountNumber === mainAccount.account_number) {
-                throw new Error('You cannot send money to your own account');
+                toast({
+                    title: 'Invalid QR',
+                    description: 'You cannot send money to your own account',
+                    variant: 'destructive',
+                });
+                setSearchQr('');
+                scannedRef.current = false;
+                return;
             }
 
-            setQrBase64(decodedText);
+            setQrBase64(searchQr);
             setRecipientInfo({
                 type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
                 accountNumber: validation.recipientAccountNumber,
+                expiresAt: validation.expiresAt,
             });
-            await stopScanner();
+            stopScanner();
             resetForm({ amount: '', notes: '' });
-        } catch (err) {
-            const msg = getErrorMessage(err);
-            setValidationError(msg);
-            // Show a toast for self‑transfer
-            if (msg.includes('cannot send money to your own account')) {
-                toast({
-                    title: 'Invalid QR',
-                    description: msg,
-                    variant: 'destructive',
-                });
-            }
-            scannedRef.current = false; // allow another scan
-        } finally {
-            setValidating(false);
         }
-    };
+    }, [validation, mainAccount, searchQr, stopScanner, resetForm, toast]);
+
+    // When validation fails
+    useEffect(() => {
+        if (validationQueryError) {
+            setValidationError(getErrorMessage(validationQueryError));
+            scannedRef.current = false;
+        }
+    }, [validationQueryError]);
 
     const startScanner = async () => {
         setCameraError(null);
@@ -164,7 +158,7 @@ export default function QRScanner() {
                 async (decodedText) => {
                     if (scannedRef.current || validating) return;
                     scannedRef.current = true;
-                    await validateAndProceed(decodedText);
+                    setSearchQr(decodedText);
                 },
                 (errorMessage) => {
                     if (errorMessage.includes('No QR code found')) return;
@@ -213,39 +207,7 @@ export default function QRScanner() {
             const decodedText = await html5Qrcode.scanFile(file, false);
 
             if (decodedText && decodedText.length > 0) {
-                setValidating(true);
-                setValidationError(null);
-                try {
-                    const token = session?.accessToken;
-                    if (!token) throw new Error('No access token');
-                    const validation = await qrService.validateQR(token, decodedText);
-
-                    // Self‑transfer check
-                    if (mainAccount && validation.recipientAccountNumber === mainAccount.account_number) {
-                        throw new Error('You cannot send money to your own account');
-                    }
-
-                    setQrBase64(decodedText);
-                    setRecipientInfo({
-                        type: validation.type === 'CONTRIBUTION' ? 'Piggy Goal' : 'P2P Transfer',
-                        accountNumber: validation.recipientAccountNumber,
-                    });
-                    setUploadError(null);
-                    resetForm({ amount: '', notes: '' });
-                } catch (err) {
-                    const msg = getErrorMessage(err);
-                    setValidationError(msg);
-                    if (msg.includes('cannot send money to your own account')) {
-                        toast({
-                            title: 'Invalid QR',
-                            description: msg,
-                            variant: 'destructive',
-                        });
-                    }
-                    setUploadedImage(null);
-                } finally {
-                    setValidating(false);
-                }
+                setSearchQr(decodedText);
             } else {
                 setUploadError('No valid QR code found in the image');
                 setUploadedImage(null);
@@ -302,6 +264,7 @@ export default function QRScanner() {
         setUploadError(null);
         setTransferError(null);
         setValidationError(null);
+        setSearchQr('');
         resetForm({ amount: '', notes: '' });
     };
 
@@ -490,7 +453,6 @@ export default function QRScanner() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="space-y-4"
                             >
-                                {/* Recipient card */}
                                 <div className="glass rounded-2xl p-5 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
                                     <div className="flex items-center justify-between mb-4">
@@ -522,12 +484,15 @@ export default function QRScanner() {
                                             <p className="text-xs text-muted-foreground">
                                                 Account: {recipientInfo.accountNumber.slice(-6)}
                                             </p>
+                                            <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
+                                                <Clock className="w-2.5 h-2.5" />
+                                                Valid until: {new Date(recipientInfo.expiresAt).toLocaleString()}
+                                            </div>
                                         </div>
                                         <Check className="w-6 h-6 text-primary shrink-0" />
                                     </div>
                                 </div>
 
-                                {/* Transfer form */}
                                 <form onSubmit={handleSubmit(onTransferSubmit)} className="glass rounded-2xl p-5 space-y-4">
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -630,7 +595,6 @@ export default function QRScanner() {
                     </AnimatePresence>
                 </div>
 
-                {/* Right panel – balance & summary */}
                 <div className="lg:col-span-1 space-y-4">
                     {mainAccountIsLoading ? (
                         <div className="w-full h-24 bg-secondary rounded-2xl animate-pulse" />

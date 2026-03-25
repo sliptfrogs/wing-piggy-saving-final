@@ -13,7 +13,7 @@ export const API_ENDPOINTS = {
     updateProfile: '/user/profile',
   },
   account: {
-    main: '/accounts/my-accounts/MAIN',
+    main: '/accounts/main',
     list: '/accounts',
     list_piggys: '/accounts/piggy-account',
     byNumber: '/accounts'
@@ -32,7 +32,8 @@ export const API_ENDPOINTS = {
     recent: '/transactions/history/recent',
   },
   qr: {
-    generate: '/qr/generate/p2p-transfer-qr'
+    generate: '/qr/generate/p2p-transfer-qr',
+    validate: '/qr/validate'
   },
   transfers: {
     p2p: '/transfers/p2p',

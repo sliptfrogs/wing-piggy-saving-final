@@ -22,3 +22,17 @@ export const useQRCode = (
     // placeholderData: (previousData) => previousData,
   });
 };
+
+
+export const useQRValidation = (qrBase64: string) => {
+  const { data: session } = useSession();
+  const token = session?.accessToken;
+
+  return useQuery({
+    queryKey: ['qr', 'validate', qrBase64],
+    queryFn: () => qrService.validateQR(token!, qrBase64),
+    enabled: !!token && !!qrBase64,
+    retry: false,
+    staleTime: 0, // never cache
+  });
+};

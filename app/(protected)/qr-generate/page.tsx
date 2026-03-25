@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PiggyBank, Wallet, Download, Share2, RefreshCw, TrendingUp, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useListPiggyAccounts, useMainAccount } from '@/hooks/api/useAccount';
+import {  useMainAccount } from '@/hooks/api/useAccount';
 import { useQRCode } from '@/hooks/api/useQr';
+import { usePiggyGoals } from '@/hooks/api/usePiggyGoal';
 
 type QRTarget = 'main' | 'piggy';
 
@@ -25,20 +26,22 @@ export default function QRGenerator() {
     data: piggyAccounts,
     isLoading: piggyLoading,
     error: piggyError,
-  } = useListPiggyAccounts();
-  /**
-   * Fetch: Main Account
-   */
-  const { data: mainAccount, isLoading: mainAccountIsLoading, error: mainAccountError } = useMainAccount();
+  } = usePiggyGoals();
 
-  // Transform API data
+  // Fetch main account
+  const {
+    data: mainAccount,
+    isLoading: mainAccountIsLoading,
+    error: mainAccountError,
+  } = useMainAccount();
+
+  // Transform piggy API data
   const activeGoals = (piggyAccounts || []).map(account => ({
-    id: account.piggy_goal_id,
-    name: account.goal_name,
+    id: account.id,
+    name: account.name,
     target_amount: account.target_amount,
-    user_id: account.user_id,
     balance: account.current_balance,
-    account_number: account.account_number, // needed for QR generation
+    account_number: account.account_number,
   }));
 
   const selectedGoal = activeGoals.find(g => g.id === selectedGoalId);
@@ -74,7 +77,7 @@ export default function QRGenerator() {
   };
 
   // ========== Loading/Error states ==========
-  if (piggyLoading) {
+  if (piggyLoading || mainAccountIsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">Loading your accounts...</div>
@@ -82,11 +85,11 @@ export default function QRGenerator() {
     );
   }
 
-  if (piggyError) {
+  if (piggyError || mainAccountError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center text-destructive">
-          <p>Error loading accounts: {piggyError.message}</p>
+          <p>Error loading accounts: {piggyError?.message || mainAccountError?.message}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded"
@@ -336,7 +339,6 @@ export default function QRGenerator() {
           </AnimatePresence>
 
           {/* Account summary strip */}
-
           {showQR && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(target === 'main'

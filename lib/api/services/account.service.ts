@@ -5,22 +5,20 @@ import {
 import { apiClient } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import { accountListSchema, Account } from "@/types/account";
-import { CreatePiggyGoalRequest, CreatePiggyGoalResponse } from "@/types/create-piggy-account";
-import { da } from "date-fns/locale";
+import {
+  CreatePiggyGoalRequest,
+  CreatePiggyGoalResponse,
+} from "@/types/create-piggy-account";
+import { MainAccount } from "@/types/main-account";
 
 export const accountService = {
   // Returns the main account (first one in the array)
-  getMainAccount: async (): Promise<Account> => {
-    const data = await apiClient.get<unknown>(API_ENDPOINTS.account.main);
-    const accounts = accountListSchema.parse(data); // data is the array from the API
-    if (!accounts.length) {
+  getMainAccount: async (): Promise<MainAccount> => {
+    const data = await apiClient.get<MainAccount>(API_ENDPOINTS.account.main);
+    if (!data) {
       throw new Error("No account found");
     }
-    // If you have multiple accounts and need the one with type "MAIN":
-    // const mainAccount = accounts.find(acc => acc.account_type === 'MAIN');
-    // if (!mainAccount) throw new Error('Main account not found');
-    // return mainAccount;
-    return accounts[0];
+    return data;
   },
 
   // If you need the full list (e.g., for an accounts page)
@@ -29,12 +27,9 @@ export const accountService = {
     return accountListSchema.parse(data);
   },
   getListPiggyAccounts: async (token: string): Promise<PiggyAccountList> => {
-    const data = await apiClient.get<unknown>(
-      API_ENDPOINTS.piggy.list,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const data = await apiClient.get<unknown>(API_ENDPOINTS.piggy.list, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     console.log("Raw API response:", data);
     const accounts = piggyAccountListSchema.parse(data); // data is the array from the API
@@ -65,7 +60,13 @@ export const accountService = {
     }
     return account;
   },
-  createPiggyGoal: async(token: string, data: CreatePiggyGoalRequest): Promise<CreatePiggyGoalResponse> =>{
-    return apiClient.post<CreatePiggyGoalResponse>(API_ENDPOINTS.piggy.create, data)
-  }
+  createPiggyGoal: async (
+    token: string,
+    data: CreatePiggyGoalRequest,
+  ): Promise<CreatePiggyGoalResponse> => {
+    return apiClient.post<CreatePiggyGoalResponse>(
+      API_ENDPOINTS.piggy.create,
+      data,
+    );
+  },
 };

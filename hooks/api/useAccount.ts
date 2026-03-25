@@ -12,10 +12,16 @@ export const accountKeys = {
 /**
  * Query hooks main account
  */
+// hooks/api/useAccount.ts
 export const useMainAccount = () => {
+  const { data: session } = useSession();
+  const token = session?.accessToken;
+
   return useQuery({
-    queryKey: ["account", "main"],
+    queryKey: ["account", "main", token],
     queryFn: () => accountService.getMainAccount(),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
