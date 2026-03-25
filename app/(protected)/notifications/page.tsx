@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -43,6 +43,14 @@ export default function Notifications() {
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [page, setPage] = useState(0);
     const pageSize = 20;
+
+    // Current time for date grouping – updated every minute
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(Date.now()), 60000);
+        return () => clearInterval(interval);
+    }, []);
 
     // TanStack Query hooks
     const { data: notificationsPage, isLoading, error, refetch } = useNotifications(page, pageSize);
@@ -97,24 +105,23 @@ export default function Notifications() {
         return list;
     }, [notifications, filter]);
 
-    // Group by relative date label
+    // Group by relative date label using stable currentTime
     const grouped = useMemo(() => {
-        const now = Date.now();
         const map = new Map<string, Notification[]>();
         const label = (iso: string) => {
-            const diff = now - new Date(iso).getTime();
+            const diff = currentTime - new Date(iso).getTime();
             if (diff < 3600000) return 'Just Now';
             if (diff < 86400000) return 'Today';
             if (diff < 172800000) return 'Yesterday';
             return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
         };
         filtered.forEach(n => {
-            const key = label(n.createdAt);
+            const key = label(n.created_at);
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(n);
         });
         return map;
-    }, [filtered]);
+    }, [filtered, currentTime]);
 
     // Pagination controls
     const totalPages = notificationsPage?.totalPages || 0;
@@ -163,8 +170,10 @@ export default function Notifications() {
                         size="sm"
                         onClick={markAllRead}
                         disabled={isMarkingAll}
-                        className="gap-2"
+                        className="gap-2 border border-y-0 border-l-0 rounded-none border-green-500  relative overflow-hidden group transition-all duration-300 ease-out"
                     >
+                        {/* Animated background effect */}
+                        <span className="absolute inset-0 w-0 bg-green-500/10 transition-all duration-300 ease-out group-hover:w-full" />
                         <CheckCheck className="w-4 h-4" />
                         {isMarkingAll ? 'Marking...' : 'Mark all read'}
                     </Button>
@@ -176,8 +185,8 @@ export default function Notifications() {
                 <button
                     onClick={() => setFilter('all')}
                     className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'all'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                         }`}
                 >
                     All
@@ -186,8 +195,8 @@ export default function Notifications() {
                 <button
                     onClick={() => setFilter('unread')}
                     className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'unread'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                         }`}
                 >
                     Unread
@@ -251,7 +260,9 @@ export default function Notifications() {
                                                                 {typeConfig[n.type]?.label || 'System'}
                                                             </span>
                                                         </div>
-                                                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed truncate">{n.message}</p>
+                                                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                                                            {n.message}
+                                                        </p>
                                                         <p className="text-[10px] text-muted-foreground/60 mt-1">
                                                             {new Date(n.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                         </p>

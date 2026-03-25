@@ -3,5 +3,5 @@ export interface Notification {
   title: string;
   content: string;
   read: boolean;
-  createdAt: string;
+  created_at: string;
 }
