@@ -33,13 +33,18 @@ const nextConfig: NextConfig = {
         hostname: "static.vecteezy.com",
         pathname: "/system/resources/**",
       },
+      {
+        protocol: "https",
+        hostname: "api.nuget.org",
+        pathname: "/v3-flatcontainer/**",
+      },
     ],
   },
   async rewrites() {
     return [
       {
-        source: '/api/proxy/:path*',
-        destination: 'http://localhost:8080/api/v1/:path*', // your backend URL
+        source: "/api/proxy/:path*",
+        destination: "http://localhost:8080/api/v1/:path*", // your backend URL
       },
     ];
   },

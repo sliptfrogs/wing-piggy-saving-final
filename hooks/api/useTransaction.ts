@@ -12,7 +12,8 @@ export const useTransactions = (page: number = 0, size: number = 10) => {
         queryKey: ['transactions', 'all', page, size, token],
         queryFn: () => transactionService.getAll(token!, page, size),
         enabled: !!token,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 30 * 1000, // 30 seconds,
+        refetchOnWindowFocus: true,
     });
 };
 

@@ -1,14 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import { notificationService } from '@/lib/api/services/notification.service';
-import { Notification } from '@/types/notification';
-import { PageResponse } from '@/types/page-response';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { notificationService } from "@/lib/api/services/notification.service";
+import { Notification } from "@/types/notification";
+import { PageResponse } from "@/types/page-response";
 
 const NOTIFICATION_KEYS = {
-  all: ['notifications'] as const,
-  lists: () => [...NOTIFICATION_KEYS.all, 'list'] as const,
-  list: (page: number, size: number) => [...NOTIFICATION_KEYS.lists(), page, size] as const,
-  unreadCount: () => [...NOTIFICATION_KEYS.all, 'unreadCount'] as const,
+  all: ["notifications"] as const,
+  lists: () => [...NOTIFICATION_KEYS.all, "list"] as const,
+  list: (page: number, size: number) =>
+    [...NOTIFICATION_KEYS.lists(), page, size] as const,
+  unreadCount: () => [...NOTIFICATION_KEYS.all, "unreadCount"] as const,
 };
 
 export const useNotifications = (page = 0, size = 20) => {
@@ -19,7 +20,9 @@ export const useNotifications = (page = 0, size = 20) => {
     queryKey: NOTIFICATION_KEYS.list(page, size),
     queryFn: () => notificationService.getNotifications(token!, page, size),
     enabled: !!token,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -42,11 +45,14 @@ export const useMarkAsRead = () => {
   const token = session?.accessToken;
 
   return useMutation({
-    mutationFn: (notificationId: string) => notificationService.markAsRead(token!, notificationId),
+    mutationFn: (notificationId: string) =>
+      notificationService.markAsRead(token!, notificationId),
     onSuccess: () => {
       // Invalidate notifications lists and unread count
       queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.lists() });
-      queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.unreadCount() });
+      queryClient.invalidateQueries({
+        queryKey: NOTIFICATION_KEYS.unreadCount(),
+      });
     },
   });
 };
@@ -60,7 +66,9 @@ export const useMarkAllAsRead = () => {
     mutationFn: () => notificationService.markAllAsRead(token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.lists() });
-      queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.unreadCount() });
+      queryClient.invalidateQueries({
+        queryKey: NOTIFICATION_KEYS.unreadCount(),
+      });
     },
   });
 };

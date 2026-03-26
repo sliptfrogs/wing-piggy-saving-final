@@ -37,6 +37,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
 
+
+
+
   // Mock notifications – replace with real hook when ready
   // const { data: notifications } = useNotifications();
   // const unreadCount = notifications?.filter(n => !n.read).length || 0;
@@ -138,13 +141,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex md:hidden">
               <button
                 onClick={() => router.push('/qr-generate')}
-                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                className={`${pathname === '/qr-generate' ? 'border-b border-primary' : ''} p-2 hover:bg-secondary transition-colors`}
               >
                 <QrCode className="w-5 h-5 text-muted-foreground" />
               </button>
               <button
                 onClick={() => router.push('/history')}
-                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                className={`${pathname === '/history' ? 'border-b border-primary' : ''} p-2  hover:bg-secondary transition-colors`}
               >
                 <History className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -153,10 +156,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {/* Notification bell – visible on all screens */}
             <button
               onClick={() => router.push('/notifications')}
-              className="relative rounded-lg hover:bg-secondary transition-colors"
+              className={`${pathname === '/notifications' ? 'border-b border-primary md:border-none md:rounded-lg md:bg-secondary' : ''} relative md:rounded-lg hover:bg-secondary transition-colors`}
             >
               {/* FIX: inner button replaced with div to avoid nesting */}
-              <div className="relative w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <div className="relative w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
               </div>

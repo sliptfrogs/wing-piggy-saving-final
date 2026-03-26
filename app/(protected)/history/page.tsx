@@ -220,9 +220,9 @@ export default function TransactionHistory() {
                             )}
                         </div>
 
-                        <div className="space-y-2 mb-4">
+                        <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-muted-foreground">Transaction Type</p>
+                                <p className="text-sm font-medium text-muted-foreground">Transaction Type</p>
                                 {filterType !== 'all' && (
                                     <button onClick={() => setFilterType('all')} className="text-xs text-muted-foreground hover:text-primary">
                                         Clear
@@ -245,24 +245,6 @@ export default function TransactionHistory() {
                                             </div>
                                         </SelectItem>
                                     ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                            <p className="text-xs font-medium text-muted-foreground">Sort by</p>
-                            <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
-                                <SelectTrigger className="w-full bg-secondary/70 border-border hover:bg-secondary transition-colors">
-                                    <div className="flex items-center gap-2">
-                                        <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-                                        <SelectValue />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="date-desc">📅 Newest First</SelectItem>
-                                    <SelectItem value="date-asc">📅 Oldest First</SelectItem>
-                                    <SelectItem value="amount-desc">💰 Highest Amount</SelectItem>
-                                    <SelectItem value="amount-asc">💰 Lowest Amount</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -302,21 +284,6 @@ export default function TransactionHistory() {
                                                     </div>
                                                 </SelectItem>
                                             ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <p className="text-xs text-muted-foreground">Sort by</p>
-                                    <Select value={sortKey} onValueChange={v => setSortKey(v as SortKey)}>
-                                        <SelectTrigger className="h-9 text-xs bg-secondary border-border text-foreground">
-                                            <ArrowUpDown className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="date-desc">Newest First</SelectItem>
-                                            <SelectItem value="date-asc">Oldest First</SelectItem>
-                                            <SelectItem value="amount-desc">Highest Amount</SelectItem>
-                                            <SelectItem value="amount-asc">Lowest Amount</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

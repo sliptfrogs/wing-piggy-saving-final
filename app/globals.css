@@ -147,3 +147,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(230 15% 28%);
 }
+
+/* KHQR style */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer {
+  animation: shimmer 1.4s infinite;
+}

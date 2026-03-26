@@ -3,17 +3,6 @@ import { AuthToken } from "@/app/types/auth-token";
 import NextAuth, { Session, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// 🔹 Custom user type
-interface AuthUser {
-  id: string;
-  email: string;
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  roles: string[];
-  accessTokenExpires: number; // milliseconds timestamp
-}
-
 // 🔹 Refresh token function
 async function refreshAccessToken(token: AuthToken) {
   try {
@@ -21,15 +10,13 @@ async function refreshAccessToken(token: AuthToken) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token.refreshToken}`, // ← send refresh token as Bearer
+        Authorization: `Bearer ${token.refreshToken}`,
       },
-      // body is empty or maybe still needed? Check backend. Usually refresh endpoint accepts no body.
-      // If your backend also expects an empty body, keep body: JSON.stringify({}).
-      body: JSON.stringify({}), // optional, depending on backend
+      body: JSON.stringify({}), // empty body – token is in header
     });
 
     const data = await res.json();
-  
+
     if (!res.ok) {
       throw new Error(data.message || "Refresh failed");
     }
@@ -37,7 +24,7 @@ async function refreshAccessToken(token: AuthToken) {
     return {
       ...token,
       accessToken: data.data?.access_token,
-      refreshToken: data.data?.refresh_token ?? token.refreshToken, // update if rotation
+      refreshToken: data.data?.refresh_token ?? token.refreshToken,
       roles: data.data?.role,
       accessTokenExpires:
         Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
@@ -50,7 +37,6 @@ async function refreshAccessToken(token: AuthToken) {
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // 1. Email/Password login
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -77,7 +63,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = response.data;
 
-        const authUser: AuthUser = {
+        return {
           id: user.user_id,
           email: user.email,
           accessToken: user.access_token,
@@ -86,12 +72,8 @@ export const authOptions: NextAuthOptions = {
           roles: user.role,
           accessTokenExpires: Date.now() + user.access_token_expires_in * 1000,
         };
-
-        return authUser;
       },
     }),
-
-    // 2. OTP verification (after registration)
     CredentialsProvider({
       id: "otp",
       name: "OTP",
@@ -133,11 +115,12 @@ export const authOptions: NextAuthOptions = {
   ],
 
   session: { strategy: "jwt" },
-  pages: { signIn: "/auth/sign-in" }, // ✅ corrected path
+  pages: { signIn: "/auth/sign-in" },
 
   callbacks: {
     async jwt({ token, user }): Promise<AuthToken> {
       if (user) {
+        // Initial sign in
         const authUser = user as AuthToken;
         return {
           ...token,
@@ -150,10 +133,12 @@ export const authOptions: NextAuthOptions = {
         };
       }
 
+      // Return token if still valid
       if (Date.now() < (token.accessTokenExpires as number)) {
         return token as AuthToken;
       }
 
+      // Token expired – refresh it
       return await refreshAccessToken(token as AuthToken);
     },
 

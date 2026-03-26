@@ -22,6 +22,7 @@ export const useMainAccount = () => {
     queryFn: () => accountService.getMainAccount(),
     enabled: !!token,
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
 

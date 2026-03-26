@@ -31,7 +31,6 @@ export const useTransfer = () => {
       // Invalidate all queries that depend on account or transaction data
       queryClient.invalidateQueries({ queryKey: ["account"] }); // e.g., useMainAccount
       queryClient.invalidateQueries({ queryKey: ["transactions"] }); // transaction list
-      queryClient.invalidateQueries({ queryKey: ["balance"] }); // if separate
     },
     onError: (error) => {
       console.error("Transfer mutation error:", error);

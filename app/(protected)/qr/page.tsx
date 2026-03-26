@@ -15,7 +15,8 @@ import {
     PiggyBank, Camera, Upload, X, User, ArrowRight,
     CheckCircle2, Info, AlertCircle, ScanLine, DollarSign,
     RefreshCw, Sparkles, Shield, Zap, Image as ImageIcon, Loader2,
-    Check, MoveUpRight, Clock
+    Check, MoveUpRight, Clock,
+    ArrowRightLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransfer } from '@/hooks/api/useTransfer';
@@ -563,10 +564,18 @@ export default function QRScanner() {
                                     )}
 
                                     <div className="flex gap-3 pt-2">
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={resetState}
+                                            disabled={isTransferring}
+                                        >
+                                            Cancel
+                                        </Button>
                                         <Button
                                             type="submit"
                                             variant="hero"
-                                            size="lg"
                                             className="flex-1 gap-2"
                                             disabled={!isValidAmount || isTransferring || amt > (mainAccount?.current_balance || 0)}
                                         >
@@ -576,17 +585,9 @@ export default function QRScanner() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <ArrowRight className="w-4 h-4" /> Confirm Transfer
+                                                     Confirm Transfer <ArrowRightLeft className="w-4 h-4" />
                                                 </>
                                             )}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={resetState}
-                                            disabled={isTransferring}
-                                        >
-                                            Cancel
                                         </Button>
                                     </div>
                                 </form>
