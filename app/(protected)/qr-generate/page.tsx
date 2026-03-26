@@ -69,7 +69,7 @@ export default function QRGenerator() {
 
   // Determine QR type and parameters
   const qrType = target === 'main' ? 'p2p' : 'contribute';
-  const qrAccountNumber = target === 'piggy' ? selectedGoal?.account_number : undefined;
+  const qrAccountNumber = target === 'piggy' && selectedGoal?.account_number ? selectedGoal.account_number : undefined;
 
   // Fetch QR code image
   const {
@@ -79,16 +79,10 @@ export default function QRGenerator() {
     refetch: refetchQR,
   } = useQRCode(qrType, qrAccountNumber);
 
+
+
   const isQRReady = !!qrImageUrl && !qrLoading && !qrError;
 
-  // Cleanup object URL
-  useEffect(() => {
-    return () => {
-      if (qrImageUrl) URL.revokeObjectURL(qrImageUrl);
-    };
-  }, [qrImageUrl]);
-
-  const showQR = target === 'main' || !!selectedGoal;
 
   // Auto-select first goal when switching to piggy mode (if any)
   useEffect(() => {
