@@ -21,8 +21,6 @@ export const qrService = {
     return response.blob();
   },
 
-  // New method: validate QR code before proceeding to amount input
-  // lib/api/services/qr.service.ts (add this method)
   validateQR: async (token: string, qrBase64: string) => {
     const data = await apiClient.get<{
       type: string;
