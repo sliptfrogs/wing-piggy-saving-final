@@ -30,7 +30,8 @@ class ApiClient {
 
   constructor() {
     this.baseURL =
-      process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+      process.env.API_BASE_URL ||
+      'https://wing-final-piggy-saving-api-piggysavingenv.up.railway.app/api/v1';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
