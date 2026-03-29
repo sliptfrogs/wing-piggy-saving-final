@@ -270,17 +270,19 @@ export default function QRGenerator() {
                       setTarget(t);
                       if (t === 'main') setSelectedGoalId('');
                     }}
-                    className={`group relative flex flex-col items-start gap-2 p-4 rounded-xl border transition-all text-left overflow-hidden ${target === t
+                    className={`group relative flex flex-col items-start gap-2 p-4 rounded-xl border transition-all text-left overflow-hidden ${
+                      target === t
                         ? 'border-blue-500/60 bg-blue-500/10 shadow-sm'
                         : 'border-gray-800 bg-gray-950/50 hover:border-blue-500/20 hover:shadow-sm'
-                      }`}
+                    }`}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${target === t
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        target === t
                           ? 'bg-blue-600 text-white shadow-md'
                           : 'bg-gray-800 text-gray-400'
-                        }`}
+                      }`}
                     >
                       <Icon className="w-5 h-5" />
                     </div>
@@ -570,42 +572,42 @@ export default function QRGenerator() {
                 <div className="grid grid-cols-3 gap-2 w-full mt-2">
                   {(target === 'main'
                     ? [
-                      {
-                        label: 'Account',
-                        value: 'Main Account',
-                        icon: Wallet,
-                      },
-                      {
-                        label: 'Balance',
-                        value: formatCurrency(
-                          mainAccount?.current_balance || 0
-                        ),
-                        icon: TrendingUp,
-                      },
-                      {
-                        label: 'Currency',
-                        value: mainAccount?.currency || 'USD',
-                        icon: CreditCard,
-                      },
-                    ]
-                    : selectedGoal
-                      ? [
                         {
-                          label: 'Goal',
-                          value: selectedGoal.name,
-                          icon: PiggyBank,
-                        },
-                        {
-                          label: 'Saved',
-                          value: formatCurrency(goalBalance),
+                          label: 'Account',
+                          value: 'Main Account',
                           icon: Wallet,
                         },
                         {
-                          label: 'Progress',
-                          value: `${goalProgress}%`,
+                          label: 'Balance',
+                          value: formatCurrency(
+                            mainAccount?.current_balance || 0
+                          ),
                           icon: TrendingUp,
                         },
+                        {
+                          label: 'Currency',
+                          value: mainAccount?.currency || 'USD',
+                          icon: CreditCard,
+                        },
                       ]
+                    : selectedGoal
+                      ? [
+                          {
+                            label: 'Goal',
+                            value: selectedGoal.name,
+                            icon: PiggyBank,
+                          },
+                          {
+                            label: 'Saved',
+                            value: formatCurrency(goalBalance),
+                            icon: Wallet,
+                          },
+                          {
+                            label: 'Progress',
+                            value: `${goalProgress}%`,
+                            icon: TrendingUp,
+                          },
+                        ]
                       : []
                   ).map(({ label, value, icon: Icon }) => (
                     <div
