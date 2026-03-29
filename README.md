@@ -17,6 +17,12 @@
 
 ---
 
+## Live Demo
+
+Experience the application live: [https://wing-piggy-saving-final-uyp4.vercel.app](https://wing-piggy-saving-final-uyp4.vercel.app)
+
+---
+
 ## Key Features
 
 - **Robust User Authentication**: Secure sign-up, sign-in, and session management powered by NextAuth.js, supporting JWT refresh for enhanced security.
@@ -213,6 +219,18 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
     pnpm start
     ```
     After building, this command serves the optimized production build.
+
+### Demo Accounts
+
+You can use the following credentials to explore the application:
+
+**Account 1:**
+- **Email:** `bovuthey2019@gmail.com`
+- **Password:** `kimsan`
+
+**Account 2:**
+- **Email:** `sliptfrogs@gmail.com`
+- **Password:** `kimsan`
 
 ---
 
