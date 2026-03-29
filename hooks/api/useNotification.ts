@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { notificationService } from "@/lib/api/services/notification.service";
-import { Notification } from "@/types/notification";
+import { AppNotification } from "@/types/notification";
 import { PageResponse } from "@/types/page-response";
 
 const NOTIFICATION_KEYS = {
@@ -16,7 +16,7 @@ export const useNotifications = (page = 0, size = 20) => {
   const { data: session } = useSession();
   const token = session?.accessToken;
 
-  return useQuery<PageResponse<Notification>>({
+  return useQuery<PageResponse<AppNotification>>({
     queryKey: NOTIFICATION_KEYS.list(page, size),
     queryFn: () => notificationService.getNotifications(token!, page, size),
     enabled: !!token,

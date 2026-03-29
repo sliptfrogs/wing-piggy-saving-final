@@ -12,20 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from '@/hooks/api/useNotification';
 import { toast } from '@/hooks/use-toast';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type NotifType = 'transfer' | 'deposit' | 'p2p' | 'contribution' | 'interest' | 'break' | 'system';
-
-interface Notification {
-    id: string;
-    type: NotifType;
-    title: string;
-    message: string;
-    read: boolean;
-    created_at: string;
-}
-
+import { AppNotification } from '@/types/notification';
+import { NotifType } from '@/types/notification';
 const typeConfig: Record<NotifType, { icon: typeof Bell; color: string; label: string }> = {
     transfer: { icon: ArrowUpRight, color: 'bg-primary/10 text-primary', label: 'Transfer' },
     deposit: { icon: ArrowDownLeft, color: 'bg-success/10 text-success', label: 'Deposit' },
@@ -58,8 +46,8 @@ export default function Notifications() {
     const { mutate: markAsRead, isPending: isMarking } = useMarkAsRead();
     const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllAsRead();
 
-    // Transform API data to UI format
-    const notifications = notificationsPage?.content || [];
+    // Transform API data to UI format – cast to AppNotification[]
+    const notifications: AppNotification[] = (notificationsPage?.content as AppNotification[]) || [];
 
     const markRead = (id: string) => {
         markAsRead(id, {
@@ -97,7 +85,7 @@ export default function Notifications() {
         });
     };
 
-    const filtered = useMemo(() => {
+    const filtered: AppNotification[] = useMemo(() => {
         let list = notifications;
         if (filter === 'unread') {
             list = list.filter(n => !n.read);
@@ -107,7 +95,7 @@ export default function Notifications() {
 
     // Group by relative date label using stable currentTime
     const grouped = useMemo(() => {
-        const map = new Map<string, Notification[]>();
+        const map = new Map<string, AppNotification[]>();
         const label = (iso: string) => {
             const diff = currentTime - new Date(iso).getTime();
             if (diff < 3600000) return 'Just Now';
@@ -173,7 +161,7 @@ export default function Notifications() {
                         className="gap-2 border border-y-0 border-l-0 rounded-none border-green-500  relative overflow-hidden group transition-all duration-300 ease-out"
                     >
                         {/* Animated background effect */}
-                        <span className="absolute inset-0 w-0 bg-green-500/10 transition-all duration-300 ease-out group-hover:w-full" />
+                        <span className="absolute inset-0 w-0 bg-primary-500/10 transition-all duration-300 ease-out group-hover:w-full" />
                         <CheckCheck className="w-4 h-4" />
                         {isMarkingAll ? 'Marking...' : 'Mark all read'}
                     </Button>
@@ -233,7 +221,9 @@ export default function Notifications() {
                                 <div className="glass rounded-2xl overflow-hidden divide-y divide-border">
                                     <AnimatePresence>
                                         {items.map((n, i) => {
-                                            const { icon: Icon, color } = typeConfig[n.type] || typeConfig.system;
+                                            // Ensure n.type is treated as a valid NotifType key
+                                            const notifType = n.type as NotifType;
+                                            const { icon: Icon, color } = typeConfig[notifType] || typeConfig.system;
                                             return (
                                                 <motion.div
                                                     key={n.id}
@@ -257,7 +247,7 @@ export default function Notifications() {
                                                             </p>
                                                             {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
                                                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                                                                {typeConfig[n.type]?.label || 'System'}
+                                                                {typeConfig[notifType]?.label || 'System'}
                                                             </span>
                                                         </div>
                                                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">

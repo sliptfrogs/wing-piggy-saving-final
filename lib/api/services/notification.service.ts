@@ -1,4 +1,4 @@
-import { Notification } from "@/types/notification";
+import { AppNotification } from "@/types/notification";
 import { apiClient } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import { PageResponse } from "@/types/page-response";
@@ -8,8 +8,8 @@ export const notificationService = {
     token: string,
     page = 0,
     size = 20,
-  ): Promise<PageResponse<Notification>> => {
-    return apiClient.get<PageResponse<Notification>>(
+  ): Promise<PageResponse<AppNotification>> => {
+    return apiClient.get<PageResponse<AppNotification>>(
       `${API_ENDPOINTS.notification.list}?page=${page}&size=${size}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
