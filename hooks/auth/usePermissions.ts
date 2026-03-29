@@ -15,12 +15,14 @@ export function usePermissions() {
   /**
    * Check if the user has at least one of the given roles.
    */
-  const hasAnyRole = (roles: string[]) => roles.some(r => userRoles.includes(r));
+  const hasAnyRole = (roles: string[]) =>
+    roles.some((r) => userRoles.includes(r));
 
   /**
    * Check if the user has all of the given roles.
    */
-  const hasAllRoles = (roles: string[]) => roles.every(r => userRoles.includes(r));
+  const hasAllRoles = (roles: string[]) =>
+    roles.every((r) => userRoles.includes(r));
 
   /**
    * Shortcut for admin role.

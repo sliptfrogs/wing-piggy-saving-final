@@ -7,7 +7,9 @@ export function useAuth() {
   const { execute, loading, error } = useApi();
 
   const login = (email: string, password: string) =>
-    execute(() => authService.login({ email, password }), { showErrorToast: true });
+    execute(() => authService.login({ email, password }), {
+      showErrorToast: true,
+    });
 
   const register = (data: RegisterRequest) =>
     execute(() => authService.register(data));

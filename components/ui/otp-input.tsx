@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -10,7 +10,12 @@ interface OTPVerificationScreenProps {
   disabled?: boolean;
 }
 
-export default function OTPInput({ length = 6, onComplete, error, disabled }: OTPVerificationScreenProps) {
+export default function OTPInput({
+  length = 6,
+  onComplete,
+  error,
+  disabled,
+}: OTPVerificationScreenProps) {
   const [digits, setDigits] = useState<string[]>(Array(length).fill(''));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -39,7 +44,7 @@ export default function OTPInput({ length = 6, onComplete, error, disabled }: OT
       inputRefs.current[index + 1]?.focus();
     }
 
-    if (newDigits.every(d => d !== '') && digit) {
+    if (newDigits.every((d) => d !== '') && digit) {
       onComplete(newDigits.join(''));
     }
   };
@@ -55,7 +60,10 @@ export default function OTPInput({ length = 6, onComplete, error, disabled }: OT
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length);
+    const pasted = e.clipboardData
+      .getData('text')
+      .replace(/\D/g, '')
+      .slice(0, length);
     if (!pasted) return;
     const newDigits = Array(length).fill('');
     for (let i = 0; i < pasted.length; i++) newDigits[i] = pasted[i];
@@ -76,13 +84,15 @@ export default function OTPInput({ length = 6, onComplete, error, disabled }: OT
       {digits.map((digit, i) => (
         <input
           key={i}
-          ref={el => { inputRefs.current[i] = el; }}
+          ref={(el) => {
+            inputRefs.current[i] = el;
+          }}
           type="password"
           inputMode="numeric"
           maxLength={1}
           value={digit}
-          onChange={e => handleChange(i, e.target.value)}
-          onKeyDown={e => handleKeyDown(i, e)}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={i === 0 ? handlePaste : undefined}
           disabled={disabled}
           className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 bg-secondary text-foreground outline-none transition-all

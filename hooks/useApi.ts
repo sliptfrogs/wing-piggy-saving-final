@@ -2,14 +2,16 @@
 import { useState, useCallback } from 'react';
 import { toast } from './use-toast';
 
-
 export function useApi<T = unknown>() {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const execute = useCallback(
-    async (apiCall: () => Promise<T>, options?: { showErrorToast?: boolean }) => {
+    async (
+      apiCall: () => Promise<T>,
+      options?: { showErrorToast?: boolean }
+    ) => {
       setLoading(true);
       setError(null);
       try {

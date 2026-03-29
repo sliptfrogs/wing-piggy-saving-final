@@ -1,16 +1,16 @@
 // app/api/qr/validate/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
+  const authHeader = req.headers.get('authorization');
   if (!authHeader) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);
-  const qrBase64 = searchParams.get("qrBase64");
+  const qrBase64 = searchParams.get('qrBase64');
   if (!qrBase64) {
-    return NextResponse.json({ error: "Missing qrBase64" }, { status: 400 });
+    return NextResponse.json({ error: 'Missing qrBase64' }, { status: 400 });
   }
 
   try {
@@ -26,9 +26,9 @@ export async function GET(req: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error("Validation proxy error:", error);
+    console.error('Validation proxy error:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

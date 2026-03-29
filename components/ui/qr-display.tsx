@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import Image from "next/image";
+import Image from 'next/image';
 import {
   PiggyBank,
   Copy,
@@ -10,15 +10,15 @@ import {
   Loader2,
   Wallet,
   QrCode,
-} from "lucide-react";
-import { useState, forwardRef } from "react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { useState, forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
 interface QRDisplayProps {
   qrImageUrl?: string;
   isQRReady: boolean;
   qrLoading: boolean;
-  target: "main" | "piggy";
+  target: 'main' | 'piggy';
   selectedGoal?: string | null;
   username?: string;
   onSelectGoal?: () => void;
@@ -31,7 +31,7 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
     qrLoading,
     target,
     selectedGoal,
-    username = "Channeang Yoeurn",
+    username = 'Channeang Yoeurn',
     onSelectGoal,
   },
   ref
@@ -46,9 +46,9 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
 
   const handleDownload = () => {
     if (!qrImageUrl) return;
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = qrImageUrl;
-    a.download = `qr-${username.replace(/\s+/g, "-").toLowerCase()}.png`;
+    a.download = `qr-${username.replace(/\s+/g, '-').toLowerCase()}.png`;
     a.click();
   };
 
@@ -80,7 +80,7 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
               />
               {/* Center Badge */}
               <div className="absolute w-[52px] h-[52px] rounded-xl bg-background border border-border flex items-center justify-center shadow-sm">
-                {target === "main" ? (
+                {target === 'main' ? (
                   <Wallet className="w-6 h-6 text-muted-foreground" />
                 ) : (
                   <PiggyBank className="w-6 h-6 text-muted-foreground" />
@@ -97,7 +97,9 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="text-xs text-muted-foreground">Generating QR...</p>
+                  <p className="text-xs text-muted-foreground">
+                    Generating QR...
+                  </p>
                 </div>
               </div>
             </div>
@@ -110,7 +112,7 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
               className="absolute inset-0 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-xl hover:border-primary/40 transition-colors group bg-background"
             >
               <div className="w-11 h-11 rounded-xl bg-secondary group-hover:bg-primary/10 transition-colors flex items-center justify-center">
-                {target === "piggy" && !selectedGoal ? (
+                {target === 'piggy' && !selectedGoal ? (
                   <PiggyBank className="w-5 h-5 text-muted-foreground" />
                 ) : (
                   <QrCode className="w-5 h-5 text-muted-foreground" />
@@ -118,17 +120,17 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
               </div>
               <div className="space-y-1 px-4 text-center">
                 <p className="text-sm font-medium text-foreground">
-                  {target === "piggy" && !selectedGoal
-                    ? "Select a goal"
-                    : "QR unavailable"}
+                  {target === 'piggy' && !selectedGoal
+                    ? 'Select a goal'
+                    : 'QR unavailable'}
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {target === "piggy" && !selectedGoal
-                    ? "Choose a saving goal to generate your QR"
-                    : "Try refreshing or check your connection"}
+                  {target === 'piggy' && !selectedGoal
+                    ? 'Choose a saving goal to generate your QR'
+                    : 'Try refreshing or check your connection'}
                 </p>
               </div>
-              {target === "piggy" && !selectedGoal && (
+              {target === 'piggy' && !selectedGoal && (
                 <button className="mt-1 px-3 py-1 rounded-full text-xs font-medium border border-border text-foreground hover:bg-secondary transition-colors">
                   Pick a goal
                 </button>
@@ -144,7 +146,9 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
         <div className="flex flex-col items-center gap-2 w-full">
           {/* Name + Verified Badge */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">{username}</span>
+            <span className="text-sm font-medium text-foreground">
+              {username}
+            </span>
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span className="text-[10px] font-medium text-emerald-700">
@@ -164,7 +168,8 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
               />
             </div>
             <span className="text-[10px] text-muted-foreground">
-              Member of <span className="font-medium text-foreground">KHQR Network</span>
+              Member of{' '}
+              <span className="font-medium text-foreground">KHQR Network</span>
             </span>
           </div>
 
@@ -183,11 +188,17 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
                 d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.69 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013.6 1.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 8.73a16 16 0 006.29 6.29l.91-.91a2 2 0 012.11-.45c.907.34 1.85.573 2.81.7A2 2 0 0122 16.92z"
               />
             </svg>
-            <span className="text-[10px] text-muted-foreground">Support 24/7</span>
+            <span className="text-[10px] text-muted-foreground">
+              Support 24/7
+            </span>
             <span className="text-border">·</span>
-            <span className="text-[10px] text-muted-foreground">023 999 989</span>
+            <span className="text-[10px] text-muted-foreground">
+              023 999 989
+            </span>
             <span className="text-border">·</span>
-            <span className="text-[10px] text-muted-foreground">012 999 488</span>
+            <span className="text-[10px] text-muted-foreground">
+              012 999 488
+            </span>
           </div>
         </div>
       </div>
@@ -198,14 +209,14 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
           <button
             onClick={handleCopy}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium border transition-all",
+              'flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium border transition-all',
               copied
-                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                : "bg-background border-border text-foreground hover:bg-secondary"
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                : 'bg-background border-border text-foreground hover:bg-secondary'
             )}
           >
             {copied ? <Check size={13} /> : <Copy size={13} />}
-            {copied ? "Copied" : "Copy link"}
+            {copied ? 'Copied' : 'Copy link'}
           </button>
 
           <button
@@ -249,5 +260,5 @@ const QRDisplay = forwardRef<HTMLDivElement, QRDisplayProps>(function QRDisplay(
   );
 });
 
-QRDisplay.displayName = "QRDisplay";
+QRDisplay.displayName = 'QRDisplay';
 export default QRDisplay;

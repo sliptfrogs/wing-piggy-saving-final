@@ -1,7 +1,7 @@
 // app/toast-provider.tsx
-"use client";
+'use client';
 
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from '@/components/ui/toaster';
 
 export default function ToastProvider() {
   return <Toaster />;

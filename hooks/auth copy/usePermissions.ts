@@ -6,7 +6,8 @@ export function usePermissions() {
   const roles = user?.roles ?? [];
 
   const hasRole = (role: string) => roles.includes(role);
-  const hasAnyRole = (roleList: string[]) => roleList.some(r => roles.includes(r));
+  const hasAnyRole = (roleList: string[]) =>
+    roleList.some((r) => roles.includes(r));
   const isAdmin = () => roles.includes('ADMIN');
 
   return { roles, hasRole, hasAnyRole, isAdmin };

@@ -29,10 +29,9 @@ export async function POST(req: Request) {
       { status: 'PENDING', message: 'OTP resent successfully' },
       { status: 200 }
     );
-  } catch (error: any) {
-    return NextResponse.json(
-      { status: 'ERROR', message: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ status: 'ERROR', message }, { status: 500 });
   }
 }

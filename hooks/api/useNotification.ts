@@ -1,15 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
-import { notificationService } from "@/lib/api/services/notification.service";
-import { AppNotification } from "@/types/notification";
-import { PageResponse } from "@/types/page-response";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
+import { notificationService } from '@/lib/api/services/notification.service';
+import { AppNotification } from '@/types/notification';
+import { PageResponse } from '@/types/page-response';
 
 const NOTIFICATION_KEYS = {
-  all: ["notifications"] as const,
-  lists: () => [...NOTIFICATION_KEYS.all, "list"] as const,
+  all: ['notifications'] as const,
+  lists: () => [...NOTIFICATION_KEYS.all, 'list'] as const,
   list: (page: number, size: number) =>
     [...NOTIFICATION_KEYS.lists(), page, size] as const,
-  unreadCount: () => [...NOTIFICATION_KEYS.all, "unreadCount"] as const,
+  unreadCount: () => [...NOTIFICATION_KEYS.all, 'unreadCount'] as const,
 };
 
 export const useNotifications = (page = 0, size = 20) => {

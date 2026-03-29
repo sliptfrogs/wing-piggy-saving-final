@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { ReactNode, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -36,17 +36,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-
-
-
-
   // Mock notifications – replace with real hook when ready
   // const { data: notifications } = useNotifications();
   // const unreadCount = notifications?.filter(n => !n.read).length || 0;
   const unreadCount = 0; // placeholder
 
   const isActive = (path: string) => pathname === path;
-
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
@@ -73,9 +68,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 onClick={() => router.push(path)}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-                  ${isActive(path)
-                    ? 'gradient-primary text-primary-foreground shadow-md'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ${
+                    isActive(path)
+                      ? 'gradient-primary text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   }
                 `}
               >
@@ -93,9 +89,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 onClick={() => router.push(path)}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-                  ${isActive(path)
-                    ? 'gradient-primary text-primary-foreground shadow-md'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ${
+                    isActive(path)
+                      ? 'gradient-primary text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   }
                 `}
               >
@@ -117,7 +114,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
 
-            <LogoutConfirmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+            <LogoutConfirmDialog
+              open={dialogOpen}
+              onOpenChange={setDialogOpen}
+            />
           </div>
         </div>
       </aside>
@@ -195,10 +195,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <button
                 key={path}
                 onClick={() => router.push(path)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${isActive(path)
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${
+                  isActive(path)
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{label}</span>
@@ -209,10 +210,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <div className="relative -mt-7">
               <button
                 onClick={() => router.push('/qr')}
-                className={`w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-glow transition-transform active:scale-95 ${pathname === '/qr'
-                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                  : ''
-                  }`}
+                className={`w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-glow transition-transform active:scale-95 ${
+                  pathname === '/qr'
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                    : ''
+                }`}
               >
                 <ScanLine className="w-6 h-6 text-primary-foreground" />
               </button>
@@ -223,10 +225,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <button
                 key={path}
                 onClick={() => router.push(path)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${isActive(path)
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${
+                  isActive(path)
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{label}</span>

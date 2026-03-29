@@ -1,17 +1,17 @@
-import { AppNotification } from "@/types/notification";
-import { apiClient } from "../client";
-import { API_ENDPOINTS } from "../endpoints";
-import { PageResponse } from "@/types/page-response";
+import { AppNotification } from '@/types/notification';
+import { apiClient } from '../client';
+import { API_ENDPOINTS } from '../endpoints';
+import { PageResponse } from '@/types/page-response';
 
 export const notificationService = {
   getNotifications: (
     token: string,
     page = 0,
-    size = 20,
+    size = 20
   ): Promise<PageResponse<AppNotification>> => {
     return apiClient.get<PageResponse<AppNotification>>(
       `${API_ENDPOINTS.notification.list}?page=${page}&size=${size}`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      { headers: { Authorization: `Bearer ${token}` } }
     );
   },
 
@@ -27,7 +27,7 @@ export const notificationService = {
       null,
       {
         headers: { Authorization: `Bearer ${token}` },
-      },
+      }
     );
   },
 
@@ -37,7 +37,7 @@ export const notificationService = {
       null,
       {
         headers: { Authorization: `Bearer ${token}` },
-      },
+      }
     );
   },
 };

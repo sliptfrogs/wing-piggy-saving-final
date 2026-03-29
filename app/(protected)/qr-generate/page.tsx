@@ -1,17 +1,30 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
-  PiggyBank, Wallet, Download, Share2, RefreshCw, TrendingUp,
-  Loader2, Globe, LockKeyhole, CreditCard, ScanLine, Copy, Check,
-  QrCode, ChevronRight, CircleCheck,
+  PiggyBank,
+  Wallet,
+  Download,
+  Share2,
+  RefreshCw,
+  TrendingUp,
+  Loader2,
+  Globe,
+  LockKeyhole,
+  CreditCard,
+  ScanLine,
+  Copy,
+  Check,
+  QrCode,
+  ChevronRight,
+  CircleCheck,
   DollarSign,
   Dot,
   EllipsisVertical,
-  ChevronDown
+  ChevronDown,
 } from 'lucide-react';
 import { Select } from 'antd';
 import { useMainAccount } from '@/hooks/api/useAccount';
@@ -25,7 +38,10 @@ import Image from 'next/image';
 type QRTarget = 'main' | 'piggy';
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(n);
 }
 
 export default function QRGenerator() {
@@ -50,7 +66,7 @@ export default function QRGenerator() {
   } = useMainAccount();
 
   // Transform piggy API data
-  const activeGoals = (piggyAccounts || []).map(account => ({
+  const activeGoals = (piggyAccounts || []).map((account) => ({
     id: account.id,
     name: account.name,
     target_amount: account.target_amount,
@@ -61,7 +77,7 @@ export default function QRGenerator() {
     status: account.status,
   }));
 
-  const selectedGoal = activeGoals.find(g => g.id === selectedGoalId);
+  const selectedGoal = activeGoals.find((g) => g.id === selectedGoalId);
   const goalBalance = selectedGoal?.balance || 0;
   const goalProgress = selectedGoal
     ? Math.round((goalBalance / selectedGoal.target_amount) * 100)
@@ -69,7 +85,10 @@ export default function QRGenerator() {
 
   // Determine QR type and parameters
   const qrType = target === 'main' ? 'p2p' : 'contribute';
-  const qrAccountNumber = target === 'piggy' && selectedGoal?.account_number ? selectedGoal.account_number : undefined;
+  const qrAccountNumber =
+    target === 'piggy' && selectedGoal?.account_number
+      ? selectedGoal.account_number
+      : undefined;
 
   // Fetch QR code image
   const {
@@ -79,14 +98,14 @@ export default function QRGenerator() {
     refetch: refetchQR,
   } = useQRCode(qrType, qrAccountNumber);
 
-
-
   const isQRReady = !!qrImageUrl && !qrLoading && !qrError;
 
-
   // Auto-select first goal when switching to piggy mode (if any)
+  // This effect is safe: it only runs when target or activeGoals changes,
+  // and the condition !selectedGoalId prevents infinite loops.
   useEffect(() => {
     if (target === 'piggy' && activeGoals.length > 0 && !selectedGoalId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedGoalId(activeGoals[0].id);
     }
   }, [target, activeGoals, selectedGoalId]);
@@ -131,8 +150,17 @@ export default function QRGenerator() {
         scale: 2,
         backgroundColor: '#ffffff',
       });
-      const blob = await new Promise<Blob>((resolve) => canvas.toBlob(resolve as any));
-      const file = new File([blob], `qr-${target === 'main' ? 'main' : selectedGoal?.name || 'piggy'}.png`, { type: 'image/png' });
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create blob'));
+        }, 'image/png');
+      });
+      const file = new File(
+        [blob],
+        `qr-${target === 'main' ? 'main' : selectedGoal?.name || 'piggy'}.png`,
+        { type: 'image/png' }
+      );
 
       if (navigator.share) {
         await navigator.share({
@@ -183,7 +211,10 @@ export default function QRGenerator() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-950">
         <div className="text-center text-red-400">
-          <p>Error loading accounts: {piggyError?.message || mainAccountError?.message}</p>
+          <p>
+            Error loading accounts:{' '}
+            {piggyError?.message || mainAccountError?.message}
+          </p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -219,7 +250,7 @@ export default function QRGenerator() {
                 <CreditCard className="w-4 h-4" /> Receive to
               </Label>
               <div className="grid grid-cols-2 gap-3">
-                {([
+                {[
                   {
                     type: 'main' as QRTarget,
                     icon: Wallet,
@@ -232,7 +263,7 @@ export default function QRGenerator() {
                     label: 'Piggy Goal',
                     sub: `${activeGoals.length} active`,
                   },
-                ]).map(({ type: t, icon: Icon, label, sub }) => (
+                ].map(({ type: t, icon: Icon, label, sub }) => (
                   <button
                     key={t}
                     onClick={() => {
@@ -240,15 +271,15 @@ export default function QRGenerator() {
                       if (t === 'main') setSelectedGoalId('');
                     }}
                     className={`group relative flex flex-col items-start gap-2 p-4 rounded-xl border transition-all text-left overflow-hidden ${target === t
-                      ? 'border-blue-500/60 bg-blue-500/10 shadow-sm'
-                      : 'border-gray-800 bg-gray-950/50 hover:border-blue-500/20 hover:shadow-sm'
+                        ? 'border-blue-500/60 bg-blue-500/10 shadow-sm'
+                        : 'border-gray-800 bg-gray-950/50 hover:border-blue-500/20 hover:shadow-sm'
                       }`}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center ${target === t
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-800 text-gray-400'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-gray-800 text-gray-400'
                         }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -284,7 +315,7 @@ export default function QRGenerator() {
                     />
                     {/* Center Badge */}
                     <div className="absolute p-3 rounded-full bg-gray-900 border-4  border-white flex items-center justify-center shadow-sm">
-                      {target === "main" ? (
+                      {target === 'main' ? (
                         <DollarSign className="w-6 h-6 text-white" />
                       ) : (
                         <PiggyBank className="w-6 h-6 text-white" />
@@ -298,7 +329,9 @@ export default function QRGenerator() {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent animate-shimmer" />
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-                        <p className="text-xs text-gray-400">Generating QR...</p>
+                        <p className="text-xs text-gray-400">
+                          Generating QR...
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -307,7 +340,9 @@ export default function QRGenerator() {
                     <div className="w-12 h-12 rounded-xl bg-gray-800 flex items-center justify-center">
                       <PiggyBank className="w-6 h-6 text-gray-500" />
                     </div>
-                    <p className="text-sm font-medium text-white">No piggy goals</p>
+                    <p className="text-sm font-medium text-white">
+                      No piggy goals
+                    </p>
                     <p className="text-xs text-gray-400">
                       Create a saving goal first to receive contributions.
                     </p>
@@ -318,7 +353,9 @@ export default function QRGenerator() {
                       <PiggyBank className="w-5 h-5 text-gray-500" />
                     </div>
                     <div className="space-y-1 px-4 text-center">
-                      <p className="text-sm font-medium text-white">Select a goal</p>
+                      <p className="text-sm font-medium text-white">
+                        Select a goal
+                      </p>
                       <p className="text-xs text-gray-400">
                         Choose a piggy goal from the left panel.
                       </p>
@@ -330,7 +367,9 @@ export default function QRGenerator() {
                       <QrCode className="w-5 h-5 text-gray-500" />
                     </div>
                     <div className="space-y-1 px-4 text-center">
-                      <p className="text-sm font-medium text-white">QR unavailable</p>
+                      <p className="text-sm font-medium text-white">
+                        QR unavailable
+                      </p>
                       <p className="text-xs text-gray-400">
                         Try refreshing or check your connection
                       </p>
@@ -347,17 +386,21 @@ export default function QRGenerator() {
                 {/* Name + Verified Badge */}
                 <div className="flex items-center gap-2">
                   <span className="text-base font-semibold text-white">
-                    {
-                      target === 'main'
-                        ? `${mainAccount?.username || 'Unknown'} • ${formatCurrency(mainAccount?.current_balance || 0)}`
-                        : selectedGoal
-                          ? `${selectedGoal.name} `
-                          : 'Select a goal'
-                    }
+                    {target === 'main'
+                      ? `${mainAccount?.username || 'Unknown'} • ${formatCurrency(mainAccount?.current_balance || 0)}`
+                      : selectedGoal
+                        ? `${selectedGoal.name} `
+                        : 'Select a goal'}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${selectedGoal?.is_public ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}>
-                      {selectedGoal?.is_public ? <Globe className="w-2.5 h-2.5" /> : <LockKeyhole className="w-2.5 h-2.5" />}
+                    <span
+                      className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${selectedGoal?.is_public ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}
+                    >
+                      {selectedGoal?.is_public ? (
+                        <Globe className="w-2.5 h-2.5" />
+                      ) : (
+                        <LockKeyhole className="w-2.5 h-2.5" />
+                      )}
                       {selectedGoal?.is_public ? 'Public' : 'Private'}
                     </span>
                   </div>
@@ -366,7 +409,7 @@ export default function QRGenerator() {
                 {/* KHQR Network Badge */}
                 <div className="flex items-center gap-1.5 px-3 ">
                   {/* Piggy goal selector – only visible when target === 'piggy' */}
-                  {target === "piggy" && (
+                  {target === 'piggy' && (
                     <motion.div
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -389,23 +432,27 @@ export default function QRGenerator() {
                                   backgroundColor: '#0f0f10',
                                   borderColor: '#1f2937',
                                   borderRadius: '0',
-                                  boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.5)',
+                                  boxShadow:
+                                    '0 20px 25px -5px rgb(0 0 0 / 0.5)',
                                 },
                               },
                             }}
                             optionLabelProp="label"
                             variant="borderless"
-                            suffixIcon={<ChevronDown className="w-4 h-4 text-gray-400" />}
+                            suffixIcon={
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            }
                           >
                             {activeGoals.map((g) => {
                               return (
                                 <Select.Option
-
                                   key={g.id}
                                   value={g.id}
                                   label={
                                     <div className="flex  flex-col">
-                                      <span className="text-xs text-white/40">Receiving to</span>
+                                      <span className="text-xs text-white/40">
+                                        Receiving to
+                                      </span>
                                       <span className="text-sm font-medium text-white">
                                         {g.account_number}
                                       </span>
@@ -413,12 +460,14 @@ export default function QRGenerator() {
                                   }
                                   className="!p-0 !m-0"
                                 >
-                                  <div className={cn(
-                                    "flex flex-col gap-2 m-0 p-0 bg-gray-950 transition-all  duration-200",
-                                    selectedGoalId === g.id
-                                      ? "border bg-gray-900 border-y-green-500/20"
-                                      : "hover:bg-white/5"
-                                  )}>
+                                  <div
+                                    className={cn(
+                                      'flex flex-col gap-2 m-0 p-0 bg-gray-950 transition-all  duration-200',
+                                      selectedGoalId === g.id
+                                        ? 'border bg-gray-900 border-y-green-500/20'
+                                        : 'hover:bg-white/5'
+                                    )}
+                                  >
                                     <div className="flex  items-center justify-between w-full px-3 py-2  ">
                                       <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -426,19 +475,24 @@ export default function QRGenerator() {
                                         </div>
                                         <div>
                                           <p className="text-xs text-gray-400">
-                                            {
-                                              g.name
-                                            }
+                                            {g.name}
                                           </p>
                                           <div className="flex items-center gap-1.5 mt-0.5">
                                             <span className="text-sm font-mono text-white">
-                                              {g?.account_number || '•••• •••• •••• ••••'}
+                                              {g?.account_number ||
+                                                '•••• •••• •••• ••••'}
                                             </span>
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-1.5 mt-0.5">
-                                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${g.is_public ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}>
-                                            {g.is_public ? <Globe className="w-2.5 h-2.5" /> : <LockKeyhole className="w-2.5 h-2.5" />}
+                                          <span
+                                            className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${g.is_public ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}
+                                          >
+                                            {g.is_public ? (
+                                              <Globe className="w-2.5 h-2.5" />
+                                            ) : (
+                                              <LockKeyhole className="w-2.5 h-2.5" />
+                                            )}
                                             {g.is_public ? 'Public' : 'Private'}
                                           </span>
                                         </div>
@@ -456,7 +510,9 @@ export default function QRGenerator() {
                           <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
                             <PiggyBank className="w-6 h-6 text-white/30" />
                           </div>
-                          <p className="text-sm text-white/70">No saving goals yet</p>
+                          <p className="text-sm text-white/70">
+                            No saving goals yet
+                          </p>
                           <p className="text-xs text-white/40 mt-1">
                             Create a goal to start collecting money
                           </p>
@@ -480,15 +536,19 @@ export default function QRGenerator() {
                           <p className="text-xs text-gray-400">Main Account</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-sm font-mono text-white">
-                              {mainAccount?.account_number || '•••• •••• •••• ••••'}
+                              {mainAccount?.account_number ||
+                                '•••• •••• •••• ••••'}
                             </span>
                             <button
                               onClick={() => {
                                 if (mainAccount?.account_number) {
-                                  navigator.clipboard.writeText(mainAccount.account_number);
+                                  navigator.clipboard.writeText(
+                                    mainAccount.account_number
+                                  );
                                   toast({
                                     title: 'Copied!',
-                                    description: 'Account number copied to clipboard.',
+                                    description:
+                                      'Account number copied to clipboard.',
                                   });
                                 }
                               }}
@@ -510,15 +570,41 @@ export default function QRGenerator() {
                 <div className="grid grid-cols-3 gap-2 w-full mt-2">
                   {(target === 'main'
                     ? [
-                      { label: 'Account', value: 'Main Account', icon: Wallet },
-                      { label: 'Balance', value: formatCurrency(mainAccount?.current_balance || 0), icon: TrendingUp },
-                      { label: 'Currency', value: mainAccount?.currency || 'USD', icon: CreditCard },
+                      {
+                        label: 'Account',
+                        value: 'Main Account',
+                        icon: Wallet,
+                      },
+                      {
+                        label: 'Balance',
+                        value: formatCurrency(
+                          mainAccount?.current_balance || 0
+                        ),
+                        icon: TrendingUp,
+                      },
+                      {
+                        label: 'Currency',
+                        value: mainAccount?.currency || 'USD',
+                        icon: CreditCard,
+                      },
                     ]
                     : selectedGoal
                       ? [
-                        { label: 'Goal', value: selectedGoal.name, icon: PiggyBank },
-                        { label: 'Saved', value: formatCurrency(goalBalance), icon: Wallet },
-                        { label: 'Progress', value: `${goalProgress}%`, icon: TrendingUp },
+                        {
+                          label: 'Goal',
+                          value: selectedGoal.name,
+                          icon: PiggyBank,
+                        },
+                        {
+                          label: 'Saved',
+                          value: formatCurrency(goalBalance),
+                          icon: Wallet,
+                        },
+                        {
+                          label: 'Progress',
+                          value: `${goalProgress}%`,
+                          icon: TrendingUp,
+                        },
                       ]
                       : []
                   ).map(({ label, value, icon: Icon }) => (
@@ -531,8 +617,12 @@ export default function QRGenerator() {
 
                       <div className="relative z-10">
                         <Icon className="w-3.5 h-3.5 text-gray-400 mx-auto mb-1 group-hover:text-blue-400 transition-colors" />
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">{label}</p>
-                        <p className="text-xs font-semibold text-white mt-0.5 truncate">{value}</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">
+                          {label}
+                        </p>
+                        <p className="text-xs font-semibold text-white mt-0.5 truncate">
+                          {value}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -546,14 +636,14 @@ export default function QRGenerator() {
                 <button
                   onClick={handleCopyLink}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all",
+                    'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all',
                     copied
-                      ? "bg-emerald-900/30 border-emerald-800 text-emerald-400"
-                      : "bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                      ? 'bg-emerald-900/30 border-emerald-800 text-emerald-400'
+                      : 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700'
                   )}
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
-                  {copied ? "Copied" : "Copy link"}
+                  {copied ? 'Copied' : 'Copy link'}
                 </button>
                 <button
                   onClick={handleSaveQR}

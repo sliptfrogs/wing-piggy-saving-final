@@ -6,4 +6,11 @@ export interface AppNotification {
   read: boolean;
   created_at: string;
 }
-export type NotifType = 'transfer' | 'deposit' | 'p2p' | 'contribution' | 'interest' | 'break' | 'system';
+export type NotifType =
+  | 'transfer'
+  | 'deposit'
+  | 'p2p'
+  | 'contribution'
+  | 'interest'
+  | 'break'
+  | 'system';

@@ -4,7 +4,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from '../use-toast';
 
-
 interface UseApiOptions<T> {
   /** Called when the operation succeeds */
   onSuccess?: (data: T) => void;

@@ -1,10 +1,10 @@
-import { qrService } from "@/lib/api/services/qr.service";
-import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
+import { qrService } from '@/lib/api/services/qr.service';
+import { useQuery } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 
 export const useQRCode = (
-  type: "p2p" | "contribute" | "ownTransfer" = "p2p",
-  accountNumber?: string,
+  type: 'p2p' | 'contribute' | 'ownTransfer' = 'p2p',
+  accountNumber?: string
 ) => {
   const { data: session } = useSession();
   const token = session?.accessToken;
@@ -12,12 +12,12 @@ export const useQRCode = (
   // Only fetch for contribute/ownTransfer if accountNumber is a non‑empty string
   const shouldFetch =
     !!token &&
-    (type === "p2p" || (!!accountNumber && accountNumber.trim() !== ""));
+    (type === 'p2p' || (!!accountNumber && accountNumber.trim() !== ''));
 
   return useQuery({
-    queryKey: ["qrCode", type, accountNumber, token],
+    queryKey: ['qrCode', type, accountNumber, token],
     queryFn: async () => {
-      if (!token) throw new Error("No access token");
+      if (!token) throw new Error('No access token');
       const blob = await qrService.generateQr(token, type, accountNumber);
       return URL.createObjectURL(blob);
     },
@@ -31,7 +31,7 @@ export const useQRValidation = (qrBase64: string) => {
   const token = session?.accessToken;
 
   return useQuery({
-    queryKey: ["qr", "validate", qrBase64],
+    queryKey: ['qr', 'validate', qrBase64],
     queryFn: () => qrService.validateQR(token!, qrBase64),
     enabled: !!token && !!qrBase64,
     retry: false,

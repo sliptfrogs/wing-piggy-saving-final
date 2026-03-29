@@ -2,7 +2,7 @@ export interface PiggyGoalDetail {
   id: string;
   name: string;
   target_amount: number;
-  status: string;          // e.g., "ACTIVE", "BROKEN", "COMPLETED"
+  status: string; // e.g., "ACTIVE", "BROKEN", "COMPLETED"
   lock_expires_at: string | null;
   created_at: string;
   account_number: string;

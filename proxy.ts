@@ -1,7 +1,7 @@
 // middleware.ts
-import { getToken } from "next-auth/jwt";
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { getToken } from 'next-auth/jwt';
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
 export default withAuth(
   async function middleware(req) {
@@ -12,16 +12,16 @@ export default withAuth(
 
     if (
       token &&
-      (pathname === "/auth/sign-in" ||
-        pathname === "/auth/sign-up" ||
-        pathname === "/auth/otp")
+      (pathname === '/auth/sign-in' ||
+        pathname === '/auth/sign-up' ||
+        pathname === '/auth/otp')
     ) {
       // console.log(
       //   "Redirecting authenticated user from",
       //   pathname,
       //   "to /dashboard",
       // );
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 
     return NextResponse.next();
@@ -33,9 +33,9 @@ export default withAuth(
         // console.log("Authorized check for:", pathname, "Token:", !!token);
         // Allow public pages without token
         if (
-          pathname === "/auth/sign-in" ||
-          pathname === "/auth/sign-up" ||
-          pathname === "/auth/otp" // ✅ added
+          pathname === '/auth/sign-in' ||
+          pathname === '/auth/sign-up' ||
+          pathname === '/auth/otp' // ✅ added
         ) {
           return true;
         }
@@ -44,11 +44,11 @@ export default withAuth(
       },
     },
     pages: {
-      signIn: "/auth/sign-in",
+      signIn: '/auth/sign-in',
     },
-  },
+  }
 );
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
 };

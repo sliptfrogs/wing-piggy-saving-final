@@ -1,15 +1,15 @@
 // lib/auth.ts
-import { AuthToken } from "@/app/types/auth-token";
-import NextAuth, { Session, type NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { AuthToken } from '@/app/types/auth-token';
+import NextAuth, { Session, type NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 // 🔹 Refresh token function
 async function refreshAccessToken(token: AuthToken) {
   try {
     const res = await fetch(`${process.env.API_BASE_URL}/auth/refresh-token`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token.refreshToken}`,
       },
       body: JSON.stringify({}), // empty body – token is in header
@@ -18,7 +18,7 @@ async function refreshAccessToken(token: AuthToken) {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.message || "Refresh failed");
+      throw new Error(data.message || 'Refresh failed');
     }
 
     return {
@@ -30,26 +30,26 @@ async function refreshAccessToken(token: AuthToken) {
         Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
     };
   } catch (error) {
-    console.error("Refresh token error:", error);
-    return { ...token, error: "RefreshAccessTokenError" };
+    console.error('Refresh token error:', error);
+    return { ...token, error: 'RefreshAccessTokenError' };
   }
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
+        email: { label: 'Email', type: 'text' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password)
-          throw new Error("Missing credentials");
+          throw new Error('Missing credentials');
 
         const res = await fetch(`${process.env.API_BASE_URL}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: credentials.email,
             password: credentials.password,
@@ -58,8 +58,8 @@ export const authOptions: NextAuthOptions = {
 
         const response = await res.json();
 
-        if (!res.ok || response.status !== "SUCCESS")
-          throw new Error(response.message || "Login failed");
+        if (!res.ok || response.status !== 'SUCCESS')
+          throw new Error(response.message || 'Login failed');
 
         const user = response.data;
 
@@ -75,19 +75,19 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     CredentialsProvider({
-      id: "otp",
-      name: "OTP",
+      id: 'otp',
+      name: 'OTP',
       credentials: {
-        email: { label: "Email", type: "text" },
-        otpCode: { label: "OTP Code", type: "text" },
+        email: { label: 'Email', type: 'text' },
+        otpCode: { label: 'OTP Code', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.otpCode)
-          throw new Error("Missing email or OTP code");
+          throw new Error('Missing email or OTP code');
 
         const res = await fetch(`${process.env.API_BASE_URL}/auth/verify-otp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: credentials.email,
             otpCode: credentials.otpCode,
@@ -96,8 +96,8 @@ export const authOptions: NextAuthOptions = {
 
         const response = await res.json();
 
-        if (!res.ok || response.status !== "SUCCESS")
-          throw new Error(response.message || "OTP verification failed");
+        if (!res.ok || response.status !== 'SUCCESS')
+          throw new Error(response.message || 'OTP verification failed');
 
         const user = response.data;
 
@@ -114,8 +114,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  session: { strategy: "jwt" },
-  pages: { signIn: "/auth/sign-in" },
+  session: { strategy: 'jwt' },
+  pages: { signIn: '/auth/sign-in' },
 
   callbacks: {
     async jwt({ token, user }): Promise<AuthToken> {

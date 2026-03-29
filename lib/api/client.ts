@@ -7,7 +7,13 @@ export class ApiError extends Error {
   path?: string;
   timestamp?: string;
 
-  constructor(status: number, message: string, code?: string, path?: string, timestamp?: string) {
+  constructor(
+    status: number,
+    message: string,
+    code?: string,
+    path?: string,
+    timestamp?: string
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
@@ -23,7 +29,8 @@ class ApiClient {
   private defaultHeaders: Record<string, string>;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+    this.baseURL =
+      process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -39,7 +46,9 @@ class ApiClient {
     }
   }
 
-  private async getHeaders(requiresAuth: boolean = true): Promise<Record<string, string>> {
+  private async getHeaders(
+    requiresAuth: boolean = true
+  ): Promise<Record<string, string>> {
     const headers: Record<string, string> = { ...this.defaultHeaders };
     if (requiresAuth) {
       const token = await this.getAuthToken();
@@ -85,13 +94,22 @@ class ApiClient {
 
         if (data && typeof data === 'object') {
           const errorObj = data as Record<string, unknown>;
-          errorMessage = (errorObj.message as string) || (errorObj.error as string) || errorMessage;
+          errorMessage =
+            (errorObj.message as string) ||
+            (errorObj.error as string) ||
+            errorMessage;
           errorCode = errorObj.code as string;
           errorPath = errorObj.path as string;
           errorTimestamp = errorObj.timestamp as string;
         }
 
-        throw new ApiError(response.status, errorMessage, errorCode, errorPath, errorTimestamp);
+        throw new ApiError(
+          response.status,
+          errorMessage,
+          errorCode,
+          errorPath,
+          errorTimestamp
+        );
       }
 
       // Process different response formats from Spring Boot
@@ -123,8 +141,16 @@ class ApiClient {
       if (error instanceof ApiError) {
         throw error;
       }
-      if (error instanceof Error && error.name === 'TypeError' && error.message === 'Failed to fetch') {
-        throw new ApiError(0, 'Network error. Please check your connection.', 'NETWORK_ERROR');
+      if (
+        error instanceof Error &&
+        error.name === 'TypeError' &&
+        error.message === 'Failed to fetch'
+      ) {
+        throw new ApiError(
+          0,
+          'Network error. Please check your connection.',
+          'NETWORK_ERROR'
+        );
       }
       // Wrap unexpected errors
       throw new ApiError(500, (error as Error).message || 'Unknown error');
@@ -132,11 +158,18 @@ class ApiClient {
   }
 
   // HTTP methods
-  get<T>(endpoint: string, options?: RequestInit & { requiresAuth?: boolean }): Promise<T> {
+  get<T>(
+    endpoint: string,
+    options?: RequestInit & { requiresAuth?: boolean }
+  ): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  post<T>(endpoint: string, body?: unknown, options?: RequestInit & { requiresAuth?: boolean }): Promise<T> {
+  post<T>(
+    endpoint: string,
+    body?: unknown,
+    options?: RequestInit & { requiresAuth?: boolean }
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -144,7 +177,11 @@ class ApiClient {
     });
   }
 
-  put<T>(endpoint: string, body?: unknown, options?: RequestInit & { requiresAuth?: boolean }): Promise<T> {
+  put<T>(
+    endpoint: string,
+    body?: unknown,
+    options?: RequestInit & { requiresAuth?: boolean }
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -152,7 +189,11 @@ class ApiClient {
     });
   }
 
-  patch<T>(endpoint: string, body?: unknown, options?: RequestInit & { requiresAuth?: boolean }): Promise<T> {
+  patch<T>(
+    endpoint: string,
+    body?: unknown,
+    options?: RequestInit & { requiresAuth?: boolean }
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -160,7 +201,10 @@ class ApiClient {
     });
   }
 
-  delete<T>(endpoint: string, options?: RequestInit & { requiresAuth?: boolean }): Promise<T> {
+  delete<T>(
+    endpoint: string,
+    options?: RequestInit & { requiresAuth?: boolean }
+  ): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 }

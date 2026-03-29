@@ -20,8 +20,8 @@ export interface PiggyGoal {
 }
 
 export interface CreatePiggyRequest {
-  name: string;          // matches the request field
-  targetAmount: number;  // camelCase as API expects
+  name: string; // matches the request field
+  targetAmount: number; // camelCase as API expects
   hideBalance: boolean;
   lockPeriodDays: number;
 }

@@ -7,7 +7,7 @@ import type { RegisterRequest } from '@/lib/api/types';
 
 interface UseAuthReturn {
   login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<any>;
+  register: (data: RegisterRequest) => Promise<unknown>;
   verifyOtp: (email: string, otpCode: string) => Promise<void>;
   resendOtp: (email: string) => Promise<void>;
   loading: boolean;
@@ -34,10 +34,7 @@ export function useAuth(): UseAuthReturn {
   };
 
   const register = async (data: RegisterRequest) => {
-    return execute(
-      () => authService.register(data),
-      { showErrorToast: true }
-    );
+    return execute(() => authService.register(data), { showErrorToast: true });
   };
 
   const verifyOtp = async (email: string, otpCode: string): Promise<void> => {
@@ -57,10 +54,11 @@ export function useAuth(): UseAuthReturn {
   };
 
   const resendOtp = async (email: string): Promise<void> => {
-    await execute(
-      () => authService.resendOtp(email),
-      { showErrorToast: true, showSuccessToast: true, successMessage: 'OTP resent!' }
-    );
+    await execute(() => authService.resendOtp(email), {
+      showErrorToast: true,
+      showSuccessToast: true,
+      successMessage: 'OTP resent!',
+    });
   };
 
   return {

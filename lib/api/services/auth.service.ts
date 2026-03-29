@@ -1,13 +1,13 @@
 // lib/api/services/auth.service.ts
-import { apiClient } from "../client";
-import { API_ENDPOINTS } from "../endpoints";
+import { apiClient } from '../client';
+import { API_ENDPOINTS } from '../endpoints';
 import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
   VerifyOtpRequest,
-} from "../types";
+} from '../types';
 
 export const authService = {
   login: (data: LoginRequest): Promise<LoginResponse> =>
@@ -29,7 +29,7 @@ export const authService = {
     apiClient.post<{ message: string }>(
       API_ENDPOINTS.auth.resendOtp,
       { email },
-      { requiresAuth: false },
+      { requiresAuth: false }
     ),
 
   logout: (): Promise<void> => apiClient.post(API_ENDPOINTS.auth.logout),
@@ -42,6 +42,6 @@ export const authService = {
       },
       {
         requiresAuth: false,
-      },
+      }
     ),
 };

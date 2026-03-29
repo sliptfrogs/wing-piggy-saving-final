@@ -1,9 +1,18 @@
-"use client";
+'use client';
 
 import { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, PiggyBank, ArrowLeftRight, User, Bell, ScanLine, QrCode, History } from 'lucide-react';
+import {
+  Home,
+  PiggyBank,
+  ArrowLeftRight,
+  User,
+  Bell,
+  ScanLine,
+  QrCode,
+  History,
+} from 'lucide-react';
 
 // Mock notifications – replace with your real hook later
 const useNotifications = () => ({
@@ -11,7 +20,7 @@ const useNotifications = () => ({
 });
 
 const navItems = [
-  { icon: Home, label: 'Home', path: '/dashboard' },       // Next.js home route
+  { icon: Home, label: 'Home', path: '/dashboard' }, // Next.js home route
   { icon: PiggyBank, label: 'Piggy', path: '/piggy' },
   // center scan button is rendered separately
   { icon: ArrowLeftRight, label: 'Transfer', path: '/transfer' },
@@ -23,7 +32,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const { data: notifications } = useNotifications();
-  const unreadCount = notifications?.filter((n: { read: boolean }) => !n.read).length || 0;
+  const unreadCount =
+    notifications?.filter((n: { read: boolean }) => !n.read).length || 0;
 
   const leftNav = navItems.slice(0, 2);
   const rightNav = navItems.slice(2);
@@ -36,7 +46,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
             <PiggyBank className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-display font-bold text-foreground text-lg">Piggy</span>
+          <span className="font-display font-bold text-foreground text-lg">
+            Piggy
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -91,7 +103,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 key={path}
                 onClick={() => router.push(path)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${
-                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                  isActive
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -105,7 +119,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <button
               onClick={() => router.push('/qr')}
               className={`w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-glow transition-transform active:scale-95 ${
-                pathname === '/qr' ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+                pathname === '/qr'
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                  : ''
               }`}
             >
               <ScanLine className="w-6 h-6 text-primary-foreground" />
@@ -120,7 +136,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 key={path}
                 onClick={() => router.push(path)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${
-                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                  isActive
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="w-5 h-5" />

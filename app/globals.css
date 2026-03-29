@@ -58,10 +58,22 @@
     --glass-border: 230 15% 22%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 30%));
-    --gradient-accent: linear-gradient(135deg, hsl(270 60% 60%), hsl(300 60% 50%));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(160 84% 39%),
+      hsl(160 84% 30%)
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(270 60% 60%),
+      hsl(300 60% 50%)
+    );
     --gradient-card: linear-gradient(145deg, hsl(230 20% 12%), hsl(230 20% 8%));
-    --gradient-hero: linear-gradient(135deg, hsl(160 84% 39% / 0.15), hsl(270 60% 60% / 0.1));
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(160 84% 39% / 0.15),
+      hsl(270 60% 60% / 0.1)
+    );
 
     /* Shadows */
     --shadow-glow: 0 0 20px hsl(160 84% 39% / 0.2);
@@ -80,7 +92,12 @@
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 }
@@ -124,12 +141,20 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 55%));
+    background-image: linear-gradient(
+      135deg,
+      hsl(160 84% 39%),
+      hsl(160 84% 55%)
+    );
   }
 
   .text-gradient-accent {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(270 60% 60%), hsl(300 60% 50%));
+    background-image: linear-gradient(
+      135deg,
+      hsl(270 60% 60%),
+      hsl(300 60% 50%)
+    );
   }
 }
 
@@ -150,8 +175,12 @@
 
 /* KHQR style */
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 .animate-shimmer {
   animation: shimmer 1.4s infinite;

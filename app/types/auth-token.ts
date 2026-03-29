@@ -1,4 +1,4 @@
-import { JWT } from "next-auth/jwt";
+import { JWT } from 'next-auth/jwt';
 
 // types for JWT token in NextAuth
 export interface AuthToken extends JWT {

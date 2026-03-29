@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const qrCodeSchema = z.object({
   qr_id: z.string(),
-  qr_image: z.string(),              // Base64 string or image URL
+  qr_image: z.string(), // Base64 string or image URL
   amount: z.number(),
   currency: z.string(),
   recipient_id: z.string(),

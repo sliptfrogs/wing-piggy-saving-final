@@ -1,22 +1,22 @@
 import {
   PiggyAccountList,
   piggyAccountListSchema,
-} from "@/types/piggy-account";
-import { apiClient } from "../client";
-import { API_ENDPOINTS } from "../endpoints";
-import { accountListSchema, Account } from "@/types/account";
+} from '@/types/piggy-account';
+import { apiClient } from '../client';
+import { API_ENDPOINTS } from '../endpoints';
+import { accountListSchema, Account } from '@/types/account';
 import {
   CreatePiggyGoalRequest,
   CreatePiggyGoalResponse,
-} from "@/types/create-piggy-account";
-import { MainAccount } from "@/types/main-account";
+} from '@/types/create-piggy-account';
+import { MainAccount } from '@/types/main-account';
 
 export const accountService = {
   // Returns the main account (first one in the array)
   getMainAccount: async (): Promise<MainAccount> => {
     const data = await apiClient.get<MainAccount>(API_ENDPOINTS.account.main);
     if (!data) {
-      throw new Error("No account found");
+      throw new Error('No account found');
     }
     return data;
   },
@@ -31,12 +31,12 @@ export const accountService = {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log("Raw API response:", data);
+    console.log('Raw API response:', data);
     const accounts = piggyAccountListSchema.parse(data); // data is the array from the API
 
     // Return empty array instead of throwing
     if (!accounts.length) {
-      console.log("No piggy accounts found");
+      console.log('No piggy accounts found');
       return []; // <-- change this line
     }
     return accounts;
@@ -44,7 +44,7 @@ export const accountService = {
   getAccountByNumberAndType: async (
     token: string,
     accountNumber: string,
-    type?: string,
+    type?: string
   ): Promise<Account> => {
     // Build the URL with optional query parameter
     let url = `${API_ENDPOINTS.account.byNumber}/${accountNumber}`;
@@ -56,17 +56,17 @@ export const accountService = {
     const account = await apiClient.get<Account>(url, { requiresAuth: true });
 
     if (!account) {
-      throw new Error("Account not found or private");
+      throw new Error('Account not found or private');
     }
     return account;
   },
   createPiggyGoal: async (
     token: string,
-    data: CreatePiggyGoalRequest,
+    data: CreatePiggyGoalRequest
   ): Promise<CreatePiggyGoalResponse> => {
     return apiClient.post<CreatePiggyGoalResponse>(
       API_ENDPOINTS.piggy.create,
-      data,
+      data
     );
   },
 };

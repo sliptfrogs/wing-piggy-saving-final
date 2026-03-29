@@ -7,6 +7,6 @@ export interface CreatePiggyGoalRequest {
 }
 
 export interface CreatePiggyGoalResponse {
-  account: any; // or specific type if needed
-  piggyGoal: any;
+  account: unknown; // or specific type if needed
+  piggyGoal: unknown;
 }

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const piggyAccountSchema = z.object({
   account_id: z.string().uuid(),
@@ -11,7 +11,9 @@ export const piggyAccountSchema = z.object({
   goal_status: z.string(),
   is_public: z.boolean(),
   hide_balance: z.boolean(),
-  lock_expires_at: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+$/),
+  lock_expires_at: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+$/),
   locked_at: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+$/),
   piggy_goal_id: z.string().uuid(),
   public: z.boolean(),

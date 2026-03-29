@@ -13,23 +13,29 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10   # or your local pnpm version (e.g., 10.28.0)
+          version: 10 # adjust to your local pnpm version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'pnpm'   # now pnpm is available, so cache works
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run linting (optional)
-        run: pnpm lint
+      # ----- Lint & Format checks -----
+      - name: Run ESLint
+        run: pnpm lint # runs next lint
 
-      - name: Run tests (optional)
-        run: pnpm test
+      - name: Check code formatting
+        run: pnpm format:check # or pnpm prettier --check .
 
+      # ----- Optional tests -----
+      - name: Run tests
+        run: pnpm test # if you have tests
+
+      # ----- Deploy to Vercel -----
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
