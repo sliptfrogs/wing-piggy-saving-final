@@ -9,7 +9,7 @@ export const qrCodeSchema = z.object({
   recipient_name: z.string(),
   expires_at: z.string().datetime(),
   status: z.enum(['PENDING', 'PAID', 'EXPIRED', 'CANCELLED']),
-  created_at: z.string().datetime()
+  created_at: z.string().datetime(),
 });
 
 export type QrCode = z.infer<typeof qrCodeSchema>;
