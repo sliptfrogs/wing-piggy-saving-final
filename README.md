@@ -6,26 +6,26 @@ Experience the application live: [https://wing-piggy-saving-final-uyp4.vercel.ap
 
 ## Features
 
-*   **User Authentication**: Secure sign-up, sign-in, and session management.
-*   **Personalized Dashboard**: Overview of savings goals and transactions.
-*   **Piggy Goal Management**: Create, track, and manage multiple savings goals.
-*   **Transaction History**: Detailed log of all financial activities.
-*   **Real-time Notifications**: Timely alerts for account activities.
-*   **QR Code Functionality**: Generate and scan QR codes for payments and transfers.
-*   **Flexible Fund Transfers**: P2P, own piggy transfers, and contributions to goals.
-*   **User Profile Management**: Update personal information and settings.
-*   **Responsive Design**: Seamless experience across devices.
+- **User Authentication**: Secure sign-up, sign-in, and session management.
+- **Personalized Dashboard**: Overview of savings goals and transactions.
+- **Piggy Goal Management**: Create, track, and manage multiple savings goals.
+- **Transaction History**: Detailed log of all financial activities.
+- **Real-time Notifications**: Timely alerts for account activities.
+- **QR Code Functionality**: Generate and scan QR codes for payments and transfers.
+- **Flexible Fund Transfers**: P2P, own piggy transfers, and contributions to goals.
+- **User Profile Management**: Update personal information and settings.
+- **Responsive Design**: Seamless experience across devices.
 
 ## Technologies Used
 
-*   **Framework**: Next.js 14.x (React)
-*   **Language**: TypeScript 5.x
-*   **Styling**: Tailwind CSS 3.x, shadcn/ui, Ant Design 6.x
-*   **State Management/Data Fetching**: React Query 5.x
-*   **Authentication**: NextAuth.js 4.x
-*   **Validation**: Zod 4.x
-*   **Forms**: React Hook Form 7.x
-*   **QR Code**: qrcode.react, html5-qrcode
+- **Framework**: Next.js 14.x (React)
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 3.x, shadcn/ui, Ant Design 6.x
+- **State Management/Data Fetching**: React Query 5.x
+- **Authentication**: NextAuth.js 4.x
+- **Validation**: Zod 4.x
+- **Forms**: React Hook Form 7.x
+- **QR Code**: qrcode.react, html5-qrcode
 
 ## Getting Started
 
@@ -33,9 +33,9 @@ To get a local copy up and running, follow these steps.
 
 ### Prerequisites
 
-*   Node.js: `^18.17.0` or `^20.5.0`
-*   pnpm: `npm install -g pnpm`
-*   Git
+- Node.js: `^18.17.0` or `^20.5.0`
+- pnpm: `npm install -g pnpm`
+- Git
 
 ### Installation
 
@@ -62,12 +62,15 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 ### Running the Application
 
 1.  **Development Mode:**
+
     ```bash
     pnpm dev
     ```
+
     Open `http://localhost:3000`.
 
 2.  **Build for Production:**
+
     ```bash
     pnpm build
     ```
@@ -82,10 +85,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 You can use the following credentials to explore the application:
 
 **Account 1:**
+
 - **Email:** `bovuthey2019@gmail.com`
 - **Password:** `kimsan`
 
 **Account 2:**
+
 - **Email:** `sliptfrogs@gmail.com`
 - **Password:** `kimsan`
 
