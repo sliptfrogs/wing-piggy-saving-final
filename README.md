@@ -225,10 +225,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 You can use the following credentials to explore the application:
 
 **Account 1:**
+
 - **Email:** `bovuthey2019@gmail.com`
 - **Password:** `kimsan`
 
 **Account 2:**
+
 - **Email:** `sliptfrogs@gmail.com`
 - **Password:** `kimsan`
 
