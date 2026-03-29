@@ -15,7 +15,7 @@ const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfa
 export const metadata: Metadata = {
   title: "Piggy Saving — Your Trusted Saving Partner",
   description: "Track your savings goals, accept contributions, and reach your dreams faster.",
-  icons: { icon: "/favicon.ico" },
+  icons: { icon: "/piggy-icon.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
