@@ -38,6 +38,7 @@
     "react-hook-form": "^7.72.0",
     "select": "^1.1.2",
     "tailwind-merge": "^3.5.0",
+    "wing-saving": "link:",
     "zod": "^4.3.6"
   },
   "devDependencies": {
