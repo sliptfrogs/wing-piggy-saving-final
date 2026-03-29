@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Track your savings goals, accept contributions, and reach your dreams faster.",
   icons: { icon: "/piggy-icon.png" },
 };
+
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={cn(inter.variable, playfair.variable, geist.variable)}>
