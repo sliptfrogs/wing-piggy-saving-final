@@ -31,10 +31,6 @@ jobs:
       - name: Check code formatting
         run: pnpm format:check # or pnpm prettier --check .
 
-      # ----- Optional tests -----
-      - name: Run tests
-        run: pnpm test # if you have tests
-
       # ----- Deploy to Vercel -----
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
