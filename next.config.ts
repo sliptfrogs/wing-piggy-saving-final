@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/proxy/:path*",
-        destination: "http://localhost:8080/api/v1/:path*", // your backend URL
+        destination: `${process.env.API_BASE_URL}/:path*`, // your backend URL
       },
     ];
   },
