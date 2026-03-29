@@ -41,10 +41,15 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const baseUrl = process.env.API_BASE_URL;
+    if (!baseUrl) {
+      console.warn("⚠️ API_BASE_URL is not set; rewrites will be disabled.");
+      return [];
+    }
     return [
       {
         source: "/api/proxy/:path*",
-        destination: `${process.env.API_BASE_URL}/:path*`, // your backend URL
+        destination: `${baseUrl}/:path*`,
       },
     ];
   },
