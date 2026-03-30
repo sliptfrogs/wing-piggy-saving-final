@@ -23,8 +23,6 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    console.log('Data: ', data);
-
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',

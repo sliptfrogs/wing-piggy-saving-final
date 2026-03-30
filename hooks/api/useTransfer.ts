@@ -7,6 +7,7 @@ import {
   OwnPiggyTransferRequest,
   OwnPiggyTransferResponse,
 } from '@/types/own-piggy-transfer';
+import { piggyKeys } from '@/lib/queryKeys';
 
 export const useTransfer = () => {
   const { data: session } = useSession();
@@ -80,9 +81,9 @@ export const useTransferOwnPiggy = () => {
       transferService.ownPiggyTransfer(data),
     onSuccess: () => {
       // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: piggyKeys.all });
       queryClient.invalidateQueries({ queryKey: ['account'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['piggy-accounts'] });
     },
   });
 };

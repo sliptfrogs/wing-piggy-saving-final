@@ -10,27 +10,31 @@ async function refreshAccessToken(token: AuthToken) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token.refreshToken}`,
       },
-      body: JSON.stringify({}), // empty body – token is in header
+      body: JSON.stringify({ refresh_token: token.refreshToken }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
+      console.error('Refresh token response error:', data);
       throw new Error(data.message || 'Refresh failed');
     }
 
+    // Extract new tokens from the response
+    const newData = data.data;
     return {
       ...token,
-      accessToken: data.data?.access_token,
-      refreshToken: data.data?.refresh_token ?? token.refreshToken,
-      roles: data.data?.role,
+      accessToken: newData.access_token,
+      refreshToken: newData.refresh_token ?? token.refreshToken,
+      roles: newData.role,
       accessTokenExpires:
-        Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
+        Date.now() + (newData.access_token_expires_in ?? 0) * 1000,
+      error: undefined, // clear any previous error
     };
   } catch (error) {
     console.error('Refresh token error:', error);
+    // Return the token with an error flag – will trigger sign out
     return { ...token, error: 'RefreshAccessTokenError' };
   }
 }
@@ -133,13 +137,18 @@ export const authOptions: NextAuthOptions = {
         };
       }
 
-      // Return token if still valid
-      if (Date.now() < (token.accessTokenExpires as number)) {
-        return token as AuthToken;
+      // ✅ Proactive refresh: refresh if token expires within the next 1 minute
+      const expiry = token.accessTokenExpires as number;
+      const now = Date.now();
+      const refreshThreshold = 60 * 1000; // 1 minute
+
+      if (expiry && now + refreshThreshold >= expiry) {
+        // Token is about to expire – refresh it
+        return await refreshAccessToken(token as AuthToken);
       }
 
-      // Token expired – refresh it
-      return await refreshAccessToken(token as AuthToken);
+      // Otherwise, return the token as is
+      return token as AuthToken;
     },
 
     async session({ session, token }): Promise<Session> {
