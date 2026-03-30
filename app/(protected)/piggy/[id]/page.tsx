@@ -61,6 +61,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useBreakPiggy } from '@/hooks/api/useBreakPiggy';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -89,11 +90,11 @@ export default function PiggyDetail() {
   const { mutate: addMoney, isPending: isAdding } = useTransferOwnPiggy();
   const { mutate: updatePublic, isPending: isUpdatingPublic } =
     useUpdatePiggyPublic();
+  const { mutate: breakPiggy, isPending: isBreaking } = useBreakPiggy(); // ✅ import and use the hook
 
   const [showQR, setShowQR] = useState(false);
   const [addAmount, setAddAmount] = useState('');
   const [notes, setNotes] = useState('');
-  const [breaking, setBreaking] = useState(false);
 
   if (isLoading) {
     return (
@@ -183,16 +184,28 @@ export default function PiggyDetail() {
     );
   };
 
+  // ✅ Actual break mutation handler
   const handleBreak = () => {
-    setBreaking(true);
-    setTimeout(() => {
-      setBreaking(false);
-      toast({
-        title: 'Feature coming soon',
-        description: 'Breaking piggy will be implemented later.',
-      });
-      router.push('/piggy');
-    }, 800);
+    breakPiggy(
+      { piggy_account_number: accountNumber },
+      {
+        onSuccess: (data) => {
+          toast({
+            title: 'Piggy Goal Broken',
+            description: `Returned ${formatCurrency(data.return_amount)} to your main account. Penalty: ${formatCurrency(data.penalty_amount)}.`,
+          });
+          // The queries will automatically refetch due to invalidation inside the mutation hook
+          // (We've set up the hook to invalidate account, transactions, and piggy queries)
+        },
+        onError: (err: Error) => {
+          toast({
+            title: 'Failed to break piggy',
+            description: err.message,
+            variant: 'destructive',
+          });
+        },
+      }
+    );
   };
 
   const quickAddAmounts = [25, 50, 100, 250];
@@ -476,7 +489,7 @@ export default function PiggyDetail() {
                   <Button
                     variant="outline"
                     className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
-                    disabled={breaking}
+                    disabled={isBreaking}
                   >
                     <Hammer className="w-4 h-4" />
                     {isLockExpired
@@ -558,7 +571,7 @@ export default function PiggyDetail() {
                       onClick={handleBreak}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {breaking
+                      {isBreaking
                         ? 'Breaking...'
                         : isLockExpired
                           ? 'Break Piggy'
@@ -585,7 +598,7 @@ export default function PiggyDetail() {
                   <Button
                     variant="outline"
                     className="w-full gap-2  border-green-500/30 hover:bg-green-500/10"
-                    disabled={breaking}
+                    disabled={isBreaking}
                   >
                     <Hammer className="w-4 h-4" />
                     Claim Piggy
@@ -665,7 +678,7 @@ export default function PiggyDetail() {
                       onClick={handleBreak}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {breaking
+                      {isBreaking
                         ? 'Breaking...'
                         : isLockExpired
                           ? 'Break Piggy'

@@ -44,6 +44,7 @@ export const API_ENDPOINTS = {
     p2p: '/transfers/p2p',
     contribute: '/transfers/contribute',
     own_piggy: '/transfers/main-to-piggy',
+    break_piggy: '/transfers/break-piggy',
   },
   notification: {
     list: '/notifications',

@@ -10,6 +10,7 @@ import {
   OwnPiggyTransferRequest,
   OwnPiggyTransferResponse,
 } from '@/types/own-piggy-transfer';
+import { BreakPiggyRequest, BreakPiggyResponse } from '@/types/break-piggy';
 
 export const transferService = {
   processQR: async (
@@ -63,6 +64,12 @@ export const transferService = {
   ): Promise<OwnPiggyTransferResponse> => {
     return apiClient.post<OwnPiggyTransferResponse>(
       API_ENDPOINTS.transfers.own_piggy,
+      data
+    );
+  },
+  breakPiggy: async (data: BreakPiggyRequest): Promise<BreakPiggyResponse> => {
+    return apiClient.post<BreakPiggyResponse>(
+      API_ENDPOINTS.transfers.break_piggy,
       data
     );
   },
