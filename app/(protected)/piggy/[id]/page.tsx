@@ -367,7 +367,7 @@ export default function PiggyDetail() {
             </div>
 
             {/* Lock status */}
-            {lockExpiresAt && !isLockExpired && (
+            {lockExpiresAt && !isLockExpired && status !== 'BROKEN' && (
               <div className="flex items-center gap-2 mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
                 <Clock className="w-4 h-4 text-amber-500" />
                 <div className="flex-1">
