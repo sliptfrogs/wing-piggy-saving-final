@@ -35,7 +35,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTransfer } from '@/hooks/api/useTransfer';
+import { useQrTransfer } from '@/hooks/api/useQr';   // ✅ changed import
 import { useToast } from '@/hooks/use-toast';
 import { useMainAccount } from '@/hooks/api/useAccount';
 import { useQRValidation } from '@/hooks/api/useQr';
@@ -94,7 +94,9 @@ export default function QRScanner() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [searchQr, setSearchQr] = useState('');
 
-  const { mutate: transfer, isPending: isTransferring } = useTransfer();
+  // ✅ use the new hook
+  const { mutate: processQr, isPending: isTransferring } = useQrTransfer();
+
   const {
     data: validation,
     isLoading: validating,
@@ -128,7 +130,7 @@ export default function QRScanner() {
       try {
         const state = scannerRef.current.getState();
         if (state === 2) await scannerRef.current.stop();
-      } catch {}
+      } catch { }
       scannerRef.current = null;
     }
     setScanning(false);
@@ -277,7 +279,7 @@ export default function QRScanner() {
   const onTransferSubmit = (data: TransferFormValues) => {
     if (!qrBase64) return;
 
-    transfer(
+    processQr(
       {
         qrBase64,
         amount: parseFloat(data.amount),

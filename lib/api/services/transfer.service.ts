@@ -18,7 +18,7 @@ export const transferService = {
     amount: number,
     notes?: string
   ) => {
-    const response = await fetch('/api/transfer/process', {
+    const response = await fetch(API_ENDPOINTS.qr.process, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -31,7 +31,15 @@ export const transferService = {
       }),
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Transfer failed');
+    if (!response.ok) {
+      // Log the full error details
+      console.error('Transfer process failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: data,
+      });
+      throw new Error(data.message || `Transfer failed (${response.status})`);
+    }
     return data;
   },
   p2pTransfer: async (

@@ -138,9 +138,9 @@ export default function PiggyDetail() {
   const daysRemaining =
     lockExpiry && !isLockExpired
       ? Math.max(
-          0,
-          Math.ceil((lockExpiry.getTime() - currentTime.getTime()) / 86400000)
-        )
+        0,
+        Math.ceil((lockExpiry.getTime() - currentTime.getTime()) / 86400000)
+      )
       : 0;
 
   let progress = 0;
@@ -482,6 +482,113 @@ export default function PiggyDetail() {
                     {isLockExpired
                       ? 'Break Piggy'
                       : 'Force Break (Penalty Applied)'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      {!isLockExpired && (
+                        <AlertTriangle className="w-5 h-5 text-destructive" />
+                      )}
+                      Break {name}?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-3">
+                        {!isLockExpired ? (
+                          <>
+                            <p>
+                              Still locked until{' '}
+                              <span className="font-semibold text-foreground">
+                                {lockExpiry?.toLocaleDateString()}
+                              </span>{' '}
+                              ({daysRemaining} day
+                              {daysRemaining !== 1 ? 's' : ''} remaining).
+                            </p>
+                            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span>Current balance</span>
+                                <span className="font-semibold text-foreground">
+                                  {isHidden
+                                    ? '••••••'
+                                    : formatCurrency(balance)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-destructive">
+                                <span>Penalty ({penaltyPct}%)</span>
+                                <span className="font-semibold">
+                                  {isHidden
+                                    ? '••••••'
+                                    : `-${formatCurrency(penaltyAmount)}`}
+                                </span>
+                              </div>
+                              <div className="border-t border-destructive/20 pt-1 flex justify-between font-semibold">
+                                <span>You will receive</span>
+                                <span className="text-foreground">
+                                  {isHidden
+                                    ? '••••••'
+                                    : formatCurrency(returnAfterPenalty)}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <p>
+                            {isHidden ? (
+                              'Your full balance will be returned.'
+                            ) : (
+                              <>
+                                You will receive{' '}
+                                <span className="font-semibold text-foreground">
+                                  {formatCurrency(balance)}
+                                </span>{' '}
+                                back to your main account.
+                              </>
+                            )}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          This action cannot be undone.
+                        </p>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleBreak}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {breaking
+                        ? 'Breaking...'
+                        : isLockExpired
+                          ? 'Break Piggy'
+                          : 'Force Break & Pay Penalty'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+          {status === 'COMPLETED' && (
+            <div className="flex flex-col gap-3">
+              <Button
+                variant="glass"
+                className="w-full gap-2"
+                onClick={() => setShowQR(!showQR)}
+              >
+                <QrCode className="w-4 h-4" />
+                {showQR ? 'Hide QR Code' : 'Show QR Code for Contributions'}
+              </Button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2  border-green-500/30 hover:bg-green-500/10"
+                    disabled={breaking}
+                  >
+                    <Hammer className="w-4 h-4" />
+                    Claim Piggy
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

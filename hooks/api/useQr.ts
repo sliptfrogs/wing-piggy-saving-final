@@ -1,5 +1,6 @@
 import { qrService } from '@/lib/api/services/qr.service';
-import { useQuery } from '@tanstack/react-query';
+import { transferService } from '@/lib/api/services/transfer.service';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
 export const useQRCode = (
@@ -36,5 +37,34 @@ export const useQRValidation = (qrBase64: string) => {
     enabled: !!token && !!qrBase64,
     retry: false,
     staleTime: 0, // never cache
+  });
+};
+
+export const useQrTransfer = () => {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      qrBase64,
+      amount,
+      notes,
+    }: {
+      qrBase64: string;
+      amount: number;
+      notes?: string;
+    }) => {
+      if (!session?.accessToken) throw new Error('No access token');
+      return transferService.processQR(
+        session.accessToken,
+        qrBase64,
+        amount,
+        notes
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['account'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
   });
 };
