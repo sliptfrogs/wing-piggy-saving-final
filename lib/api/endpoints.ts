@@ -1,5 +1,7 @@
 // lib/api/endpoints.ts
-const baseUrl = process.env.API_BASE_URL || 'https://wing-final-piggy-saving-api-piggysavingenv.up.railway.app/api/v1';
+const baseUrl =
+  process.env.API_BASE_URL ||
+  'https://wing-final-piggy-saving-api-piggysavingenv.up.railway.app/api/v1';
 export const API_ENDPOINTS = {
   auth: {
     login: '/auth/login',
@@ -36,7 +38,7 @@ export const API_ENDPOINTS = {
   qr: {
     generate: '/qr/generate/p2p-transfer-qr',
     validate: '/qr/validate',
-    process: `${baseUrl}/qr-transfers/process`
+    process: `${baseUrl}/qr-transfers/process`,
   },
   transfers: {
     p2p: '/transfers/p2p',

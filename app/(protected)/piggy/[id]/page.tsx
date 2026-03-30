@@ -138,9 +138,9 @@ export default function PiggyDetail() {
   const daysRemaining =
     lockExpiry && !isLockExpired
       ? Math.max(
-        0,
-        Math.ceil((lockExpiry.getTime() - currentTime.getTime()) / 86400000)
-      )
+          0,
+          Math.ceil((lockExpiry.getTime() - currentTime.getTime()) / 86400000)
+        )
       : 0;
 
   let progress = 0;
