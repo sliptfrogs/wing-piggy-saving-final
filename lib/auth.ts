@@ -27,7 +27,9 @@ async function refreshAccessToken(token: AuthToken) {
       refreshToken: data.data?.refresh_token ?? token.refreshToken,
       roles: data.data?.role,
       accessTokenExpires:
-        Date.now() + (data.data?.access_token_expires_in ?? 0) * 1000,
+        Date.now() +
+        (data.data?.access_token_expires_in ?? 0) * 1000 -
+        60 * 1000,
     };
   } catch (error) {
     console.error('Refresh token error:', error);
