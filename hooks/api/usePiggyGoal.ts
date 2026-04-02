@@ -45,6 +45,7 @@ export const useCreatePiggyGoal = () => {
     mutationFn: (data: CreatePiggyRequest) => piggyService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
+      
     },
   });
 };

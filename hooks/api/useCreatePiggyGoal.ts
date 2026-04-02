@@ -5,6 +5,7 @@ import {
   CreatePiggyGoalRequest,
   CreatePiggyGoalResponse,
 } from '@/types/create-piggy-account';
+import { piggyKeys } from '@/lib/queryKeys';
 
 export const useCreatePiggyGoal = () => {
   const { data: session } = useSession();
@@ -15,6 +16,7 @@ export const useCreatePiggyGoal = () => {
       accountService.createPiggyGoal(session!.accessToken!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piggy-accounts'] });
+      queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
     },
   });
 };

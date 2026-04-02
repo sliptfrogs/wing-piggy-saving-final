@@ -15,7 +15,7 @@ import {
   Globe,
   LockKeyhole,
 } from 'lucide-react';
-import { usePiggyGoals } from '@/hooks/api/usePiggyGoal'; // new hook
+import { usePiggyGoals } from '@/hooks/api/usePiggyGoal'; 
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
