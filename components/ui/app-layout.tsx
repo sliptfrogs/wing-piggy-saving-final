@@ -23,7 +23,6 @@ const mainNavItems = [
   { icon: Home, label: 'Home', path: '/dashboard' },
   { icon: PiggyBank, label: 'Piggy', path: '/piggy' },
   { icon: ArrowLeftRight, label: 'Transfer', path: '/transfer' },
-  { icon: User, label: 'Profile', path: '/profile' },
 ];
 
 // Additional actions that appear in desktop sidebar (and mobile header)
