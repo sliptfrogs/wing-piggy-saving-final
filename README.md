@@ -128,10 +128,10 @@ API_BASE_URL=https://your-api-endpoint.com/api/v1
 
 Explore the application using these test credentials:
 
-| Role       | Email                    | Password |
-| :--------- | :----------------------- | :------- |
-| **User A** | `bovuthey2019@gmail.com` | `kimsan` |
-| **User B** | `sliptfrogs@gmail.com`   | `kimsan` |
+| Role      | Email                    | Password |
+| :-------- | :----------------------- | :------- |
+| **ADMIN** | `bovuthey2019@gmail.com` | `kimsan` |
+| **USER**  | `sliptfrogs@gmail.com`   | `kimsan` |
 
 ## 🚢 Deployment
 
