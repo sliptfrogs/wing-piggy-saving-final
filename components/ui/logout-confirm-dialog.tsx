@@ -1,4 +1,3 @@
-// components/logout-confirm-dialog.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -47,7 +46,12 @@ export function LogoutConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+          <AlertDialogAction
+            className="bg-red-500 shadow-none hover:bg-red-300 hover:opacity-50 text-white border border-gray-400"
+            onClick={handleLogout}
+          >
+            Logout
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -110,7 +110,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-destructive/10 hover:text-destructive group"
               >
                 <LogOut className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
-                <span className="text-sm font-medium">Logout</span>
+                <span className="text-sm font-medium">Sign out</span>
               </button>
             </div>
 

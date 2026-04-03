@@ -20,7 +20,8 @@ import {
   Phone,
   Calendar,
   TrendingUp,
-} from 'lucide-react';
+} from 'lucide-react'; // adjust path if needed
+import { LogoutConfirmDialog } from '@/components/ui/logout-confirm-dialog';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -72,6 +73,7 @@ export default function Profile() {
   const [fullName, setFullName] = useState(mockProfile.full_name);
   const [phone, setPhone] = useState(mockProfile.phone);
   const [saving, setSaving] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleEdit = () => {
     setFullName(mockProfile.full_name);
@@ -147,7 +149,7 @@ export default function Profile() {
             <Button
               variant="outline"
               className="w-full justify-start gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
-              onClick={() => router.push('/login')}
+              onClick={() => setLogoutDialogOpen(true)} // open dialog instead of direct navigation
             >
               <LogOut className="w-4 h-4" /> Sign Out
             </Button>
@@ -270,6 +272,12 @@ export default function Profile() {
           </div>
         </div>
       </motion.div>
+
+      {/* Logout confirmation dialog */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+      />
     </div>
   );
 }
