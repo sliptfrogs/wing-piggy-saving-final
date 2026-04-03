@@ -237,12 +237,12 @@ export default function Dashboard() {
 
               <div className="mb-8">
                 <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                  <span>Available Balance</span>
+                  <span className="font-sans">Available Balance</span>
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                     Instant
                   </span>
                 </p>
-                <h2 className="text-4xl lg:text-5xl font-display font-bold text-foreground tracking-tight">
+                <h2 className="text-4xl font-mono lg:text-5xl  font-bold text-foreground tracking-tight">
                   {showBalance
                     ? formatCurrency(mainAccount?.current_balance ?? 0)
                     : '••••••'}

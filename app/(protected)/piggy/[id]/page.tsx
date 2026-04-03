@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +25,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   ArrowLeft,
-  QrCode,
   PiggyBank,
   Hammer,
   Lock,
@@ -39,7 +37,6 @@ import {
   Clock,
   Gift,
   Shield,
-  Zap,
   DollarSign,
   CheckCircle2,
   Loader2,
@@ -91,9 +88,8 @@ export default function PiggyDetail() {
   const { mutate: addMoney, isPending: isAdding } = useTransferOwnPiggy();
   const { mutate: updatePublic, isPending: isUpdatingPublic } =
     useUpdatePiggyPublic();
-  const { mutate: breakPiggy, isPending: isBreaking } = useBreakPiggy(); // ✅ import and use the hook
+  const { mutate: breakPiggy, isPending: isBreaking } = useBreakPiggy();
 
-  const [showQR, setShowQR] = useState(false);
   const [addAmount, setAddAmount] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -181,7 +177,6 @@ export default function PiggyDetail() {
     );
   };
 
-  // ✅ Actual break mutation handler
   const handleBreak = () => {
     breakPiggy(
       { piggy_account_number: accountNumber },
@@ -191,8 +186,6 @@ export default function PiggyDetail() {
             title: 'Piggy Goal Broken',
             description: `Returned ${formatCurrency(data.return_amount)} to your main account. Penalty: ${formatCurrency(data.penalty_amount)}.`,
           });
-          // The queries will automatically refetch due to invalidation inside the mutation hook
-          // (We've set up the hook to invalidate account, transactions, and piggy queries)
         },
         onError: (err: Error) => {
           toast({
@@ -206,7 +199,6 @@ export default function PiggyDetail() {
   };
 
   const quickAddAmounts = [25, 50, 100, 250];
-  const qrPayload = `piggy:${id}:${name}`;
 
   const handlePublicToggle = (checked: boolean) => {
     updatePublic(
@@ -302,7 +294,7 @@ export default function PiggyDetail() {
                 Current Balance
               </p>
               <div className="flex items-end gap-2">
-                <span className="text-4xl font-display font-bold text-foreground">
+                <span className="text-4xl font-mono font-bold text-foreground">
                   {isHidden ? '••••••' : formatCurrency(balance)}
                 </span>
                 {isHidden && (
@@ -414,7 +406,7 @@ export default function PiggyDetail() {
                   required
                   min="1"
                   step="0.01"
-                  className="pl-8 bg-secondary border-border text-foreground text-2xl font-bold h-14 tabular-nums
+                  className="pl-8 font-mono bg-secondary border-border text-foreground text-2xl font-bold h-14 tabular-nums
                                         [&::-webkit-inner-spin-button]:appearance-none
                                         [&::-webkit-outer-spin-button]:appearance-none
                                         [-moz-appearance:textfield] focus:ring-2 focus:ring-primary/20"
@@ -427,7 +419,7 @@ export default function PiggyDetail() {
                     key={amount}
                     type="button"
                     onClick={() => setAddAmount(String(amount))}
-                    className="px-4 py-2 rounded-lg font-medium bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors"
+                    className="px-4 font-mono py-2 rounded-lg font-medium bg-secondary text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors"
                   >
                     ${amount}
                   </button>
@@ -437,7 +429,7 @@ export default function PiggyDetail() {
               <div className="space-y-2">
                 <Label
                   htmlFor="notes"
-                  className="text-xs text-muted-foreground"
+                  className="text-sm text-muted-foreground"
                 >
                   Notes (optional)
                 </Label>
@@ -450,8 +442,7 @@ export default function PiggyDetail() {
                 />
               </div>
 
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Shield className="w-3 h-3" />
+              <p className="text-sm font-mono text-muted-foreground flex items-center gap-1">
                 Available: {formatCurrency(mainBalance)}
               </p>
 
@@ -472,15 +463,6 @@ export default function PiggyDetail() {
           {/* Action buttons */}
           {status === 'ACTIVE' && (
             <div className="flex flex-col gap-3">
-              <Button
-                variant="glass"
-                className="w-full gap-2"
-                onClick={() => setShowQR(!showQR)}
-              >
-                <QrCode className="w-4 h-4" />
-                {showQR ? 'Hide QR Code' : 'Show QR Code for Contributions'}
-              </Button>
-
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -581,20 +563,11 @@ export default function PiggyDetail() {
           )}
           {status === 'COMPLETED' && (
             <div className="flex flex-col gap-3">
-              <Button
-                variant="glass"
-                className="w-full gap-2"
-                onClick={() => setShowQR(!showQR)}
-              >
-                <QrCode className="w-4 h-4" />
-                {showQR ? 'Hide QR Code' : 'Show QR Code for Contributions'}
-              </Button>
-
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full gap-2  border-green-500/30 hover:bg-green-500/10"
+                    className="w-full gap-2 border-green-500/30 hover:bg-green-500/10"
                     disabled={isBreaking}
                   >
                     <Hammer className="w-4 h-4" />
@@ -686,34 +659,6 @@ export default function PiggyDetail() {
               </AlertDialog>
             </div>
           )}
-
-          {/* QR code panel */}
-          {showQR && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="glass rounded-2xl p-6 flex flex-col items-center gap-3"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <p className="text-sm font-medium text-foreground">
-                  Scan to Contribute
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-lg">
-                <QRCodeSVG value={qrPayload} size={180} />
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                QR for{' '}
-                <span className="font-semibold text-foreground">{name}</span>
-              </p>
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                Expires in 10 minutes
-              </div>
-            </motion.div>
-          )}
         </div>
 
         {/* RIGHT COLUMN: stats + interest history */}
@@ -768,7 +713,7 @@ export default function PiggyDetail() {
                     {label}
                   </p>
                 </div>
-                <p className="text-2xl font-display font-bold text-foreground">
+                <p className="text-2xl font-mono font-bold text-foreground">
                   {value}
                 </p>
                 {sub && (
@@ -908,7 +853,7 @@ export default function PiggyDetail() {
               <span className="text-sm font-semibold text-foreground">
                 Total Interest Earned
               </span>
-              <span className="text-base font-bold text-primary tabular-nums">
+              <span className="text-base font-mono font-bold text-primary tabular-nums">
                 +{isHidden ? '••••' : formatCurrency(0)}
               </span>
             </div>

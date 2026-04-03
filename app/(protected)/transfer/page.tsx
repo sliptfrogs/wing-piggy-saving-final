@@ -531,7 +531,7 @@ export default function Transfer() {
             ) : balanceError ? (
               <p className="text-destructive text-sm">Failed to load</p>
             ) : (
-              <p className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+              <p className="text-2xl  sm:text-3xl font-mono font-bold text-foreground">
                 {formatCurrency(mainBalance)}
               </p>
             )}

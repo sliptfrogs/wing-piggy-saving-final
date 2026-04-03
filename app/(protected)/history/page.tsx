@@ -311,7 +311,7 @@ export default function TransactionHistory() {
             >
               <Icon className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
             </div>
-            <p className="text-base sm:text-lg font-display font-bold text-foreground">
+            <p className="text-base font-mono sm:text-lg font-bold text-foreground">
               {value}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">{label}</p>

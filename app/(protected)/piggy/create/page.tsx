@@ -319,7 +319,7 @@ export default function CreatePiggy() {
                             {tagline}
                           </p>
                           {amount > 0 && (
-                            <p className="text-xs font-semibold text-primary mt-1.5">
+                            <p className="text-base font-mono font-semibold text-primary mt-1.5">
                               {formatCurrency(amount)}
                             </p>
                           )}
@@ -385,7 +385,7 @@ export default function CreatePiggy() {
                         required
                         min="1"
                         step="0.01"
-                        className="pl-8 bg-secondary border-border text-foreground text-2xl font-bold h-14 tabular-nums
+                        className="pl-8 text-2xl font-mono bg-secondary border-border text-foreground h-14 tabular-nums
                         [&::-webkit-inner-spin-button]:appearance-none
                         [&::-webkit-outer-spin-button]:appearance-none
                         [-moz-appearance:textfield] focus:ring-2 focus:ring-primary/20"
@@ -402,7 +402,7 @@ export default function CreatePiggy() {
                             type="button"
                             onClick={() => setTargetAmount(String(amt))}
                             className={cn(
-                              'px-3 py-1.5 rounded-full font-medium border transition-all',
+                              'px-3 font-mono py-1.5 rounded-full font-medium border transition-all',
                               targetAmount === String(amt)
                                 ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                                 : 'bg-background/50 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-background'
@@ -604,7 +604,7 @@ export default function CreatePiggy() {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                 Target
               </p>
-              <p className="text-3xl font-display font-bold text-foreground leading-none">
+              <p className="text-3xl font-mono font-bold text-foreground leading-none">
                 {!isNaN(target) && target > 0 ? (
                   formatCurrency(target)
                 ) : (
@@ -618,12 +618,14 @@ export default function CreatePiggy() {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Progress</span>
-                <span>0%</span>
+                <span className="font-mono">0%</span>
               </div>
               <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
                 <div className="h-full w-0 rounded-full gradient-primary" />
               </div>
-              <p className="text-xs text-muted-foreground">$0.00 saved</p>
+              <p className="text-xs font-mono text-muted-foreground">
+                $0.00 saved
+              </p>
             </div>
           </div>
 
@@ -729,11 +731,11 @@ export default function CreatePiggy() {
                     <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                       Balance
                     </p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                    <p className="text-sm font-mono font-semibold text-foreground mt-0.5">
                       &lt; $5,000
                     </p>
                     <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-bold text-foreground">
+                      <span className="text-lg font-mono font-bold text-foreground">
                         0.10%
                       </span>
                       <span className="text-[10px] text-muted-foreground">
@@ -747,11 +749,11 @@ export default function CreatePiggy() {
                     <p className="text-[11px] font-medium text-primary uppercase tracking-wider">
                       Balance
                     </p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                    <p className="text-sm font-mono font-semibold text-foreground mt-0.5">
                       ≥ $5,000
                     </p>
                     <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-bold text-primary">
+                      <span className="text-lg font-mono font-bold text-primary">
                         3.0%
                       </span>
                       <span className="text-[10px] text-primary/70">p.a.</span>

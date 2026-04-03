@@ -160,7 +160,7 @@ export default function PiggyList() {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">
               {stat.label}
             </p>
-            <p className="text-2xl font-display font-bold text-foreground">
+            <p className="text-2xl font-mono font-bold text-foreground">
               {stat.value}
             </p>
             <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
@@ -249,12 +249,12 @@ export default function PiggyList() {
                       </div>
 
                       <div className="mb-3">
-                        <span className="text-2xl font-display font-bold text-foreground">
+                        <span className="text-2xl font-mono  font-bold text-foreground">
                           {goal.hide_balance && goal.status === 'active'
                             ? '••••••'
                             : formatCurrency(balance)}
                         </span>
-                        <span className="text-sm text-muted-foreground ml-1.5">
+                        <span className="text-sm font-mono text-muted-foreground ml-1.5">
                           of{' '}
                           {goal.hide_balance && goal.status === 'active'
                             ? '••••••'
@@ -335,12 +335,12 @@ export default function PiggyList() {
                             {goal.isPublic ? 'Public' : 'Private'}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs font-mono text-muted-foreground">
                           Target: {formatCurrency(goal.target_amount)}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-foreground tabular-nums">
+                        <p className="text-sm font-mono font-bold text-foreground tabular-nums">
                           {goal.hide_balance && goal.status === 'active'
                             ? '••••••'
                             : formatCurrency(balance)}

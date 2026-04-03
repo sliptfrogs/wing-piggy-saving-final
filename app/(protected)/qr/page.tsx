@@ -761,7 +761,7 @@ export default function QRScanner() {
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                 Available Balance
               </p>
-              <p className="text-3xl font-display font-bold text-foreground">
+              <p className="text-3xl font-mono font-bold text-foreground">
                 {formatCurrency(mainAccount?.current_balance ?? 0)}
               </p>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -792,7 +792,7 @@ export default function QRScanner() {
                     {recipientInfo.type === 'Piggy Goal'
                       ? 'Piggy Goal'
                       : 'Account'}{' '}
-                    ({recipientInfo.accountNumber.slice(-6)})
+                    ({recipientInfo.accountNumber})
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-1">
@@ -822,7 +822,7 @@ export default function QRScanner() {
                     <span className="text-sm font-medium text-foreground">
                       Total to send
                     </span>
-                    <span className="text-lg font-bold text-primary">
+                    <span className="text-lg font-mono font-bold text-primary">
                       {formatCurrency(amt)}
                     </span>
                   </div>

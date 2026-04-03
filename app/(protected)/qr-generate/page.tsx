@@ -371,7 +371,7 @@ export default function QRGenerator() {
               <div className="flex flex-col items-center gap-3 w-full">
                 {/* Name + Verified Badge */}
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-white">
+                  <span className="text-base font-mono font-semibold text-white">
                     {target === 'main'
                       ? `${mainAccount?.username || 'Unknown'} • ${formatCurrency(mainAccount?.current_balance || 0)}`
                       : selectedGoal
@@ -602,7 +602,7 @@ export default function QRGenerator() {
                         <p className="text-[10px] text-gray-400 uppercase tracking-wider">
                           {label}
                         </p>
-                        <p className="text-xs font-semibold text-white mt-0.5 truncate">
+                        <p className="text-xs font-mono font-semibold text-white mt-0.5 truncate">
                           {value}
                         </p>
                       </div>
