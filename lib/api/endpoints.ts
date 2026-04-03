@@ -1,3 +1,5 @@
+import { get } from "http";
+
 // lib/api/endpoints.ts
 const baseUrl =
   process.env.API_BASE_URL ||
@@ -28,6 +30,7 @@ export const API_ENDPOINTS = {
       `/piggy/by-account/${accountNumber}`,
     update_public: (accountNumber: string) => `/piggy/${accountNumber}`,
     delete: (id: string) => `/piggy/${id}`,
+    get_by_user_and_status: (status: string) => `/piggy/by-status/${status}`,
   },
   transaction: {
     history: '/transactions/history',

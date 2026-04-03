@@ -31,6 +31,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { AppNotification } from '@/types/notification';
 import { NotifType } from '@/types/notification';
+import Loading from '@/components/ui/loading-custom';
 const typeConfig: Record<
   NotifType,
   { icon: typeof Bell; color: string; label: string }
@@ -175,9 +176,7 @@ export default function Notifications() {
 
   if (isLoading && !notificationsPage) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <Loading/>
     );
   }
 

@@ -22,6 +22,10 @@ export const piggyService = {
   getAll: (): Promise<PiggyGoalDetail[]> =>
     apiClient.get<PiggyGoalDetail[]>(API_ENDPOINTS.piggy.list),
 
+  getAllByUserIdAndPiggyStatus: (status: string): Promise<PiggyGoalDetail[]> =>
+    apiClient.get<PiggyGoalDetail[]>(
+      API_ENDPOINTS.piggy.get_by_user_and_status(status)
+    ),
   /**
    * Create a new piggy goal.
    * Request body uses camelCase as expected by the backend.

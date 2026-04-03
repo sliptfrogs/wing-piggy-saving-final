@@ -62,6 +62,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useBreakPiggy } from '@/hooks/api/useBreakPiggy';
+import Loading from '@/components/ui/loading-custom';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -98,9 +99,7 @@ export default function PiggyDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <Loading/>
     );
   }
 

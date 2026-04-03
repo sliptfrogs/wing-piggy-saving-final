@@ -37,9 +37,6 @@ const mockProfile = {
   email: 'alex@example.com',
   joined: 'January 2024',
 };
-
-const mockMainAccount = { balance: 1250.5 };
-
 const mockStats = [
   {
     label: 'Main Balance',

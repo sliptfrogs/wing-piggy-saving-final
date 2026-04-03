@@ -26,6 +26,7 @@ import { useState } from 'react';
 import { useMainAccount } from '@/hooks/api/useAccount';
 import { usePiggyGoals } from '@/hooks/api/usePiggyGoal';
 import { useTransactions } from '@/hooks/api/useTransaction';
+import Loading from '@/components/ui/loading-custom';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -154,11 +155,7 @@ export default function Dashboard() {
 
   // Loading states
   if (balanceLoading || goalsLoading || txLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <Loading/>
   }
 
   // Error handling (optional: show toast or fallback)

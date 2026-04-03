@@ -39,6 +39,7 @@ import { useQrTransfer } from '@/hooks/api/useQr'; // ✅ changed import
 import { useToast } from '@/hooks/use-toast';
 import { useMainAccount } from '@/hooks/api/useAccount';
 import { useQRValidation } from '@/hooks/api/useQr';
+import ErrorPage from '@/components/ui/error-custom';
 
 const transferSchema = z.object({
   amount: z
@@ -74,7 +75,6 @@ export default function QRScanner() {
     isLoading: mainAccountIsLoading,
     error: mainAccountError,
   } = useMainAccount();
-  const { data: session } = useSession();
   const { toast } = useToast();
 
   const [scanMode, setScanMode] = useState<'camera' | 'upload'>('camera');
@@ -747,12 +747,7 @@ export default function QRScanner() {
           {mainAccountIsLoading ? (
             <div className="w-full h-24 bg-secondary rounded-2xl animate-pulse" />
           ) : mainAccountError ? (
-            <div className="flex items-start gap-2 text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
-              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-              <span className="text-destructive text-sm">
-                Failed to load account balance
-              </span>
-            </div>
+            <ErrorPage error={mainAccountError} reset={()=>window.location.reload()}/>
           ) : (
             <motion.div
               initial={{ opacity: 0, x: 20 }}

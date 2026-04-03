@@ -34,6 +34,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import Image from 'next/image';
+import Loading from '@/components/ui/loading-custom';
+import ErrorPage from '@/components/ui/error-custom';
 
 type QRTarget = 'main' | 'piggy';
 
@@ -110,14 +112,6 @@ export default function QRGenerator() {
     }
   }, [target, activeGoals, selectedGoalId]);
 
-  // Handlers
-  const handleRefresh = () => {
-    refetchQR();
-    toast({
-      title: 'QR Code Refreshed',
-      description: 'A new QR code has been generated.',
-    });
-  };
 
   const handleSaveQR = async () => {
     if (!qrContainerRef.current) return;
@@ -201,28 +195,18 @@ export default function QRGenerator() {
   // ========== Loading/Error states ==========
   if (piggyLoading || mainAccountIsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-950">
-        <div className="text-white">Loading your accounts...</div>
-      </div>
+      <Loading/>
     );
   }
 
-  if (piggyError || mainAccountError) {
+  if (piggyError) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-950">
-        <div className="text-center text-red-400">
-          <p>
-            Error loading accounts:{' '}
-            {piggyError?.message || mainAccountError?.message}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
+      <ErrorPage error={piggyError} reset={() => window.location.reload()} />
+    );
+  }
+  if(mainAccountError){
+    return (
+      <ErrorPage error={mainAccountError} reset={() => window.location.reload()} />
     );
   }
 

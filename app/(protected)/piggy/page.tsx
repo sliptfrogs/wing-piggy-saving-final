@@ -15,7 +15,9 @@ import {
   Globe,
   LockKeyhole,
 } from 'lucide-react';
-import { usePiggyGoals } from '@/hooks/api/usePiggyGoal'; 
+import { usePiggyGoals } from '@/hooks/api/usePiggyGoal';
+import Loading from '@/components/ui/loading-custom';
+import ErrorPage from '@/components/ui/error-custom';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -102,26 +104,13 @@ export default function PiggyList() {
 
   if (piggyLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">Loading your piggy goals...</div>
-      </div>
+      <Loading />
     );
   }
 
   if (piggyError) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-destructive">
-          <p>Failed to load goals: {piggyError.message}</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <ErrorPage error={piggyError} reset={() => window.location.reload()} />
     );
   }
 

@@ -33,8 +33,8 @@ import {
   useTransferOwnPiggy,
 } from '@/hooks/api/useTransfer';
 import { useMainAccount } from '@/hooks/api/useAccount';
-import { usePiggyGoals } from '@/hooks/api/usePiggyGoal'; // updated import
 import { toast } from '@/hooks/use-toast';
+import { usePiggyGoalsByUserIdAndStatus } from '@/hooks/api/usePiggyGoal';
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-US', {
@@ -87,7 +87,7 @@ export default function Transfer() {
     data: piggyGoals,
     isLoading: piggyLoading,
     error: piggyError,
-  } = usePiggyGoals(); // usePiggyGoals
+  } = usePiggyGoalsByUserIdAndStatus('ACTIVE'); // usePiggyGoals
 
   // Account lookup for P2P/Contribute
   const accountTypeParam =

@@ -20,6 +20,19 @@ export const usePiggyGoals = () => {
   });
 };
 
+export const usePiggyGoalsByUserIdAndStatus = (status: string) => {
+  const { data: session } = useSession();
+  const token = session?.accessToken;
+
+  return useQuery({
+    queryKey: ['piggy-goals', 'status', status],
+    queryFn: () => piggyService.getAllByUserIdAndPiggyStatus(status),
+    enabled: !!token && !!status,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+
 /**
  * Fetch a single piggy goal by its associated account number (detail page).
  */
@@ -45,7 +58,7 @@ export const useCreatePiggyGoal = () => {
     mutationFn: (data: CreatePiggyRequest) => piggyService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
-      
+
     },
   });
 };
