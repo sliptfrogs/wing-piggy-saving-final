@@ -617,7 +617,7 @@ export default function QRGenerator() {
               <div className="flex gap-3 w-full max-w-sm">
                 <button
                   onClick={() =>
-                    handleCopyLink(mainAccount?.account_number || '')
+                    handleCopyLink(selectedGoal?.account_number || '')
                   }
                   className={cn(
                     'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all',
