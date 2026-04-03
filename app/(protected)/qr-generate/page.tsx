@@ -380,14 +380,10 @@ export default function QRGenerator() {
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${selectedGoal?.is_public ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}
+                      className={`inline-flex  items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20`}
                     >
-                      {selectedGoal?.is_public ? (
-                        <Globe className="w-2.5 h-2.5" />
-                      ) : (
-                        <LockKeyhole className="w-2.5 h-2.5" />
-                      )}
-                      {selectedGoal?.is_public ? 'Public' : 'Private'}
+                      <Globe className="w-2.5 h-2.5" />
+                      Public
                     </span>
                   </div>
                 </div>

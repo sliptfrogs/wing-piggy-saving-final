@@ -43,7 +43,8 @@ export const usePiggyGoalByAccountNumber = (accountNumber: string) => {
     queryKey: piggyKeys.byAccount(accountNumber),
     queryFn: () => piggyService.getByAccountNumber(token!, accountNumber),
     enabled: !!token && !!accountNumber,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchInterval: 5000,
   });
 };
 
