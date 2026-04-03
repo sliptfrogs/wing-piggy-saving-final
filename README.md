@@ -9,26 +9,31 @@ Experience the application live: [https://wing-piggy-saving-final-uyp4.vercel.ap
 ## ✨ Features
 
 ### 👤 User Experience
+
 - **Secure Authentication**: Robust sign-up, sign-in, and session management using NextAuth.js.
 - **Personalized Dashboard**: A centralized overview of your savings goals, recent activities, and account status.
 - **User Profile Management**: Easily update personal information and account settings.
 
 ### 🐷 Savings & Goals
+
 - **Piggy Goal Management**: Create, track, and manage multiple savings goals with specific targets and deadlines.
 - **Visual Progress**: Real-time tracking of goal completion with intuitive progress indicators.
 - **Goal Contributions**: Seamlessly add funds to your specific savings goals.
 
 ### 💸 Transactions & Transfers
+
 - **Flexible Fund Transfers**: Support for P2P (Peer-to-Peer) transfers, transfers between own accounts, and goal contributions.
 - **Transaction History**: A detailed, searchable, and paginated log of all financial activities.
 - **QR Code Functionality**: Generate personal QR codes for receiving funds and scan others' codes for quick payments/transfers.
 
 ### 🛡️ Admin Capabilities
+
 - **Transaction Management**: Administrative view of all platform-wide transactions.
 - **Transaction Reversal**: Ability for administrators to reverse completed transactions if necessary.
 - **System Overview**: High-level statistics on platform volume and activity.
 
 ### 📱 Modern Interface
+
 - **Responsive Design**: A mobile-first, fully responsive UI that works perfectly on desktops, tablets, and smartphones.
 - **Real-time Notifications**: Instant alerts for important account activities and updates.
 - **Dark Mode Support**: Built-in theme switching for a comfortable viewing experience.
@@ -73,6 +78,7 @@ Experience the application live: [https://wing-piggy-saving-final-uyp4.vercel.ap
 ### Installation
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/your-username/wing-piggy-saving-final.git
    cd wing-piggy-saving-final
@@ -100,12 +106,15 @@ API_BASE_URL=https://your-api-endpoint.com/api/v1
 ### Running Locally
 
 - **Development Mode**:
+
   ```bash
   pnpm dev
   ```
+
   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - **Build for Production**:
+
   ```bash
   pnpm build
   ```
@@ -119,20 +128,23 @@ API_BASE_URL=https://your-api-endpoint.com/api/v1
 
 Explore the application using these test credentials:
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
+| Role       | Email                    | Password |
+| :--------- | :----------------------- | :------- |
 | **User A** | `bovuthey2019@gmail.com` | `kimsan` |
-| **User B** | `sliptfrogs@gmail.com` | `kimsan` |
+| **User B** | `sliptfrogs@gmail.com`   | `kimsan` |
 
 ## 🚢 Deployment
 
 ### Vercel (Recommended)
+
 This project is optimized for Vercel. Simply connect your repository to Vercel, configure the environment variables, and it will deploy automatically.
 
 ### Manual Deployment
+
 1. Run `pnpm build` to generate the production build.
 2. Ensure your server has the required Node.js version and environment variables set.
 3. Run `pnpm start` to launch the application.
 
 ## 📄 License
+
 This project is private and intended for demonstration purposes.
