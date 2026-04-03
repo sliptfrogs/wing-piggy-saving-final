@@ -112,7 +112,6 @@ export default function QRGenerator() {
     }
   }, [target, activeGoals, selectedGoalId]);
 
-
   const handleSaveQR = async () => {
     if (!qrContainerRef.current) return;
     try {
@@ -194,9 +193,7 @@ export default function QRGenerator() {
 
   // ========== Loading/Error states ==========
   if (piggyLoading || mainAccountIsLoading) {
-    return (
-      <Loading/>
-    );
+    return <Loading />;
   }
 
   if (piggyError) {
@@ -204,9 +201,12 @@ export default function QRGenerator() {
       <ErrorPage error={piggyError} reset={() => window.location.reload()} />
     );
   }
-  if(mainAccountError){
+  if (mainAccountError) {
     return (
-      <ErrorPage error={mainAccountError} reset={() => window.location.reload()} />
+      <ErrorPage
+        error={mainAccountError}
+        reset={() => window.location.reload()}
+      />
     );
   }
 

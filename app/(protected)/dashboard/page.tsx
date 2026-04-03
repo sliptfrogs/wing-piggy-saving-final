@@ -155,7 +155,7 @@ export default function Dashboard() {
 
   // Loading states
   if (balanceLoading || goalsLoading || txLoading) {
-    return <Loading/>
+    return <Loading />;
   }
 
   // Error handling (optional: show toast or fallback)

@@ -98,9 +98,7 @@ export default function PiggyDetail() {
   const [notes, setNotes] = useState('');
 
   if (isLoading) {
-    return (
-      <Loading/>
-    );
+    return <Loading />;
   }
 
   if (error || !piggyGoal) {

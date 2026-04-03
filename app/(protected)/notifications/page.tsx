@@ -175,9 +175,7 @@ export default function Notifications() {
   const handleNextPage = () => setPage((p) => p + 1);
 
   if (isLoading && !notificationsPage) {
-    return (
-      <Loading/>
-    );
+    return <Loading />;
   }
 
   if (error) {

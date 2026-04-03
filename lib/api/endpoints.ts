@@ -1,4 +1,4 @@
-import { get } from "http";
+import { get } from 'http';
 
 // lib/api/endpoints.ts
 const baseUrl =

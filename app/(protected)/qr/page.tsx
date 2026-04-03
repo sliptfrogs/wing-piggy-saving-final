@@ -747,7 +747,10 @@ export default function QRScanner() {
           {mainAccountIsLoading ? (
             <div className="w-full h-24 bg-secondary rounded-2xl animate-pulse" />
           ) : mainAccountError ? (
-            <ErrorPage error={mainAccountError} reset={()=>window.location.reload()}/>
+            <ErrorPage
+              error={mainAccountError}
+              reset={() => window.location.reload()}
+            />
           ) : (
             <motion.div
               initial={{ opacity: 0, x: 20 }}

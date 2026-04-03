@@ -32,7 +32,6 @@ export const usePiggyGoalsByUserIdAndStatus = (status: string) => {
   });
 };
 
-
 /**
  * Fetch a single piggy goal by its associated account number (detail page).
  */
@@ -58,7 +57,6 @@ export const useCreatePiggyGoal = () => {
     mutationFn: (data: CreatePiggyRequest) => piggyService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
-
     },
   });
 };

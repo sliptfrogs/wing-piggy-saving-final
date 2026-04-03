@@ -103,9 +103,7 @@ export default function PiggyList() {
   const totalTarget = active.reduce((sum, g) => sum + g.target_amount, 0);
 
   if (piggyLoading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   if (piggyError) {
