@@ -29,13 +29,13 @@ import {
 import { Select } from 'antd';
 import { useMainAccount } from '@/hooks/api/useAccount';
 import { useQRCode } from '@/hooks/api/useQr';
-import { usePiggyGoals } from '@/hooks/api/usePiggyGoal';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import Image from 'next/image';
 import Loading from '@/components/ui/loading-custom';
 import ErrorPage from '@/components/ui/error-custom';
+import { usePiggyGoalsByUserIdAndStatus } from '@/hooks/api/usePiggyGoal';
 
 type QRTarget = 'main' | 'piggy';
 
@@ -58,7 +58,7 @@ export default function QRGenerator() {
     data: piggyAccounts,
     isLoading: piggyLoading,
     error: piggyError,
-  } = usePiggyGoals();
+  } = usePiggyGoalsByUserIdAndStatus('ACTIVE');
 
   // Fetch main account
   const {
@@ -181,13 +181,13 @@ export default function QRGenerator() {
     }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+  const handleCopyLink = (accountNumber: string) => {
+    navigator.clipboard.writeText(accountNumber);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({
-      title: 'Link Copied',
-      description: 'QR code link copied to clipboard.',
+      title: 'Number Copied',
+      description: 'Account number copied to clipboard.',
     });
   };
 
@@ -620,7 +620,9 @@ export default function QRGenerator() {
             {isQRReady && (
               <div className="flex gap-3 w-full max-w-sm">
                 <button
-                  onClick={handleCopyLink}
+                  onClick={() =>
+                    handleCopyLink(mainAccount?.account_number || '')
+                  }
                   className={cn(
                     'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all',
                     copied
@@ -629,7 +631,7 @@ export default function QRGenerator() {
                   )}
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
-                  {copied ? 'Copied' : 'Copy link'}
+                  {copied ? 'Copied' : 'Copy'}
                 </button>
                 <button
                   onClick={handleSaveQR}
