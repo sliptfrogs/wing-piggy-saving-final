@@ -72,3 +72,18 @@ export const useRecentTransactions = (limit: number = 5) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+// Inside the same file, after the other hooks
+export const useAdminTransactions = (page: number = 0, size: number = 10) => {
+  const { data: session } = useSession();
+  const token = session?.accessToken;
+  const isAdmin = session?.user?.roles.includes('ADMIN');
+
+  return useQuery<PageResponse<TransactionResponseDto>>({
+    queryKey: ['transactions', 'admin', page, size, token],
+    queryFn: () => transactionService.getAdminTransactions(token!, page, size),
+    enabled: !!token && isAdmin,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+  });
+};

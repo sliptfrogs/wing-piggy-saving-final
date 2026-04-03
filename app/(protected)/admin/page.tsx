@@ -1,255 +1,93 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Shield,
-  Users,
   History,
-  Settings,
   RotateCcw,
-  BookOpen,
   TrendingUp,
-  TrendingDown,
   ArrowUpRight,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  Search,
-  ChevronDown,
-  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAdminTransactions } from '@/hooks/api/useTransaction';
+import { useUserRole } from '@/hooks/api/useUserRole';
+import Loading from '@/components/ui/loading-custom';
 
-function formatCurrency(n: number) {
+function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format(n);
+  }).format(amount);
 }
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
-const mockUsers = [
-  {
-    id: 'u1',
-    full_name: 'Alex Johnson',
-    phone: '+855 12 345 678',
-    created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
-    balance: 1250.5,
-    goals: 3,
-  },
-  {
-    id: 'u2',
-    full_name: 'Jane Smith',
-    phone: '+855 98 765 432',
-    created_at: new Date(Date.now() - 60 * 86400000).toISOString(),
-    balance: 3400.0,
-    goals: 2,
-  },
-  {
-    id: 'u3',
-    full_name: 'David Lee',
-    phone: '+855 11 223 344',
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-    balance: 870.25,
-    goals: 1,
-  },
-  {
-    id: 'u4',
-    full_name: 'Sarah Wong',
-    phone: '+855 55 667 788',
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-    balance: 5100.0,
-    goals: 4,
-  },
-];
-
-const mockTransactions = [
-  {
-    id: 'tx1',
-    type: 'deposit',
-    description: 'Salary Deposit',
-    amount: 2500.0,
-    status: 'completed',
-    created_at: new Date().toISOString(),
-    from_account_id: 'ext',
-    to_account_id: 'acc1',
-  },
-  {
-    id: 'tx2',
-    type: 'transfer',
-    description: 'Transfer to New Laptop',
-    amount: 200.0,
-    status: 'completed',
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    from_account_id: 'acc1',
-    to_account_id: 'acc2',
-  },
-  {
-    id: 'tx3',
-    type: 'p2p',
-    description: 'Paid Jane Smith',
-    amount: 45.5,
-    status: 'completed',
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    from_account_id: 'acc1',
-    to_account_id: 'acc3',
-  },
-  {
-    id: 'tx4',
-    type: 'reversal',
-    description: 'Reversed Transfer',
-    amount: 50.0,
-    status: 'reversed',
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    from_account_id: 'acc2',
-    to_account_id: 'acc1',
-  },
-  {
-    id: 'tx5',
-    type: 'deposit',
-    description: 'Freelance Payment',
-    amount: 850.0,
-    status: 'completed',
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-    from_account_id: 'ext',
-    to_account_id: 'acc3',
-  },
-  {
-    id: 'tx6',
-    type: 'fee',
-    description: 'Early Break Penalty',
-    amount: 12.5,
-    status: 'completed',
-    created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
-    from_account_id: 'acc1',
-    to_account_id: 'ext',
-  },
-];
-
-const mockLedger = [
-  {
-    id: 'l1',
-    transaction_id: 'tx1abc123',
-    account_type: 'main',
-    debit: 0,
-    credit: 2500,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'l2',
-    transaction_id: 'tx2def456',
-    account_type: 'piggy',
-    debit: 200,
-    credit: 0,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 'l3',
-    transaction_id: 'tx3ghi789',
-    account_type: 'main',
-    debit: 45.5,
-    credit: 0,
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: 'l4',
-    transaction_id: 'tx4jkl012',
-    account_type: 'main',
-    debit: 0,
-    credit: 50,
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-  {
-    id: 'l5',
-    transaction_id: 'tx5mno345',
-    account_type: 'main',
-    debit: 0,
-    credit: 850,
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: 'l6',
-    transaction_id: 'tx6pqr678',
-    account_type: 'main',
-    debit: 12.5,
-    credit: 0,
-    created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
-  },
-];
-
-const mockSettings = [
-  {
-    key: 'interest_rate_flexible',
-    value: '1.5',
-    description: '% p.a. for flexible goals',
-  },
-  {
-    key: 'interest_rate_30d',
-    value: '3.0',
-    description: '% p.a. for 30-day lock',
-  },
-  {
-    key: 'interest_rate_90d',
-    value: '4.5',
-    description: '% p.a. for 90-day lock',
-  },
-  {
-    key: 'early_break_penalty_pct',
-    value: '5',
-    description: '% penalty for early break',
-  },
-  { key: 'max_piggy_goals', value: '10', description: 'Max goals per user' },
-];
-
-type Tab = 'users' | 'transactions' | 'ledger' | 'settings';
-
-export default function AdminPanel() {
+export default function AdminTransactions() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('users');
-  const [transactions, setTransactions] = useState(mockTransactions);
-  const [settingValues, setSettingValues] = useState<Record<string, string>>(
-    {}
-  );
-  const [userSearch, setUserSearch] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
+  const [page, setPage] = useState(0);
+  const pageSize = 10;
 
-  const reverseTransaction = (id: string) => {
-    setTransactions((ts) =>
-      ts.map((t) => (t.id === id ? { ...t, status: 'reversed' } : t))
+  const { data, isLoading, error, refetch, isFetching } = useAdminTransactions(
+    page,
+    pageSize
+  );
+
+  // Redirect non‑admins in a useEffect
+  useEffect(() => {
+    if (!roleLoading && !isAdmin) {
+      router.push('/auth/unauthorized');
+    }
+  }, [roleLoading, isAdmin, router]);
+
+  if (roleLoading || isLoading) {
+    return <Loading />;
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-destructive">
+          Failed to load transactions: {error.message}
+        </p>
+        <Button onClick={() => refetch()} variant="outline">
+          Retry
+        </Button>
+      </div>
     );
+  }
+
+  const transactions = data?.content || [];
+  const totalPages = data?.totalPages || 0;
+  const currentPage = data?.number || 0;
+  const totalElements = data?.totalElements || 0;
+
+  const hasPrev = currentPage > 0;
+  const hasNext = currentPage < totalPages - 1;
+
+  const handleReverse = (transactionId: string) => {
+    // TODO: Implement reverse API call
+    console.log('Reverse transaction:', transactionId);
+    // After reversing, refetch the list
+    // refetch();
   };
-
-  const handleSaveSettings = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const filteredUsers = mockUsers.filter(
-    (u) =>
-      u.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.phone.includes(userSearch)
-  );
-
-  const totalBalance = mockUsers.reduce((s, u) => s + u.balance, 0);
-  const totalTxVolume = mockTransactions.reduce((s, t) => s + t.amount, 0);
-
-  const tabs: { key: Tab; icon: typeof Shield; label: string }[] = [
-    { key: 'users', icon: Users, label: 'Users' },
-    { key: 'transactions', icon: History, label: 'Transactions' },
-    { key: 'ledger', icon: BookOpen, label: 'Ledger' },
-    { key: 'settings', icon: Settings, label: 'Settings' },
-  ];
 
   return (
     <div className="px-4 sm:px-6 xl:px-8 py-5 sm:py-6 xl:py-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6">
@@ -260,442 +98,210 @@ export default function AdminPanel() {
         </div>
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">
-            Admin Panel
+            Admin – Transactions
           </h1>
           <p className="text-sm text-muted-foreground">
-            System management & oversight
+            View and manage all platform transactions
           </p>
         </div>
       </div>
 
       {/* Summary stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {[
-          {
-            label: 'Total Users',
-            value: mockUsers.length,
-            icon: Users,
-            color: 'bg-primary/10 text-primary',
-          },
-          {
-            label: 'Total Balance',
-            value: formatCurrency(totalBalance),
-            icon: TrendingUp,
-            color: 'bg-success/10 text-success',
-          },
-          {
-            label: 'Tx Volume',
-            value: formatCurrency(totalTxVolume),
-            icon: ArrowUpRight,
-            color: 'bg-info/10 text-info',
-          },
-          {
-            label: 'Transactions',
-            value: mockTransactions.length,
-            icon: History,
-            color: 'bg-warning/10 text-warning',
-          },
-        ].map(({ label, value, icon: Icon, color }, i) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * i }}
-            className="glass rounded-xl sm:rounded-2xl p-3 sm:p-4"
-          >
-            <div
-              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center mb-1 sm:mb-2 ${color}`}
-            >
-              <Icon className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
-            </div>
-            <p className="text-base sm:text-lg font-display font-bold text-foreground">
-              {value}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Tab bar - responsive: wraps on mobile, grid on large */}
-      <div className="flex flex-col gap-2 lg:grid lg:grid-cols-4">
-        {tabs.map(({ key, icon: Icon, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={cn(
-              'flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all w-full lg:w-auto',
-              tab === key
-                ? 'gradient-primary text-primary-foreground border-transparent shadow-glow'
-                : 'bg-card border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="glass rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <History className="w-4 h-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              Total Transactions
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{totalElements}</p>
+        </div>
+        <div className="glass rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-success" />
+            <span className="text-xs text-muted-foreground">Total Volume</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">
+            {formatCurrency(
+              transactions.reduce((sum, tx) => sum + tx.amount, 0)
             )}
-          >
-            <Icon className="w-4 h-4" />
-            <span>{label}</span>
-          </button>
-        ))}
+          </p>
+        </div>
+        <div className="glass rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <ArrowUpRight className="w-4 h-4 text-info" />
+            <span className="text-xs text-muted-foreground">Pages</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{totalPages}</p>
+        </div>
       </div>
 
-      {/* ── Tab content ── */}
-
-      {/* USERS */}
-      {tab === 'users' && (
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search users by name or phone..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              className="pl-9 bg-secondary border-border text-foreground"
-            />
-          </div>
-
-          {/* Mobile cards */}
-          <div className="block lg:hidden space-y-3">
-            {filteredUsers.map((u, i) => (
-              <motion.div
-                key={u.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.03 * i }}
-                className="glass rounded-2xl p-4 space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground">
-                      {u.full_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {u.phone}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCurrency(u.balance)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {u.goals} goals
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-border">
-                  <span className="text-xs text-muted-foreground">
-                    Joined: {new Date(u.created_at).toLocaleDateString()}
-                  </span>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">
-                    View Details
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden lg:block glass rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-5 gap-4 px-5 py-3 border-b border-border bg-secondary/50">
-              {['Name', 'Phone', 'Balance', 'Goals', 'Joined'].map((h) => (
-                <p
-                  key={h}
-                  className="text-xs font-semibold text-muted-foreground uppercase tracking-widest"
-                >
-                  {h}
-                </p>
-              ))}
+      {/* Desktop table */}
+      <div className="hidden lg:block glass rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[1000px]">
+            <div className="grid grid-cols-7 gap-3 px-5 py-3 border-b border-border bg-secondary/50 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <div>ID</div>
+              <div>Date</div>
+              <div>Type</div>
+              <div>Amount</div>
+              <div>Counterparty</div>
+              <div>Goal</div>
+              <div>Action</div>
             </div>
-            {filteredUsers.map((u, i) => (
+            {transactions.map((tx, idx) => (
               <motion.div
-                key={u.id}
+                key={tx.transaction_id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.03 * i }}
-                className="grid grid-cols-5 gap-4 px-5 py-4 border-b border-border last:border-0 hover:bg-secondary/40 transition-colors items-center"
+                transition={{ delay: idx * 0.02 }}
+                className="grid grid-cols-7 gap-3 px-5 py-4 border-b border-border last:border-0 hover:bg-secondary/40 transition-colors items-center"
               >
-                <p className="text-sm font-medium text-foreground truncate">
-                  {u.full_name}
-                </p>
-                <p className="text-sm text-muted-foreground">{u.phone}</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums">
-                  {formatCurrency(u.balance)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {u.goals} active
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(u.created_at).toLocaleDateString()}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TRANSACTIONS */}
-      {tab === 'transactions' && (
-        <div className="space-y-3">
-          <div className="block lg:hidden space-y-3">
-            {transactions.map((tx, i) => (
-              <motion.div
-                key={tx.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.03 * i }}
-                className="glass rounded-2xl p-4 space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground">
-                      {tx.description}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">
-                        {tx.type}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {tx.status === 'completed' ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                        ) : (
-                          <XCircle className="w-3.5 h-3.5 text-destructive" />
-                        )}
-                        <span
-                          className={`text-xs ${tx.status === 'completed' ? 'text-success' : 'text-destructive'}`}
-                        >
-                          {tx.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCurrency(tx.amount)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                {tx.status === 'completed' && tx.type !== 'reversal' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => reverseTransaction(tx.id)}
-                    className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Reverse Transaction
-                  </Button>
-                )}
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="hidden lg:block glass rounded-2xl overflow-x-auto">
-            <div className="min-w-[800px]">
-              <div className="grid grid-cols-6 gap-4 px-5 py-3 border-b border-border bg-secondary/50">
-                {[
-                  'Description',
-                  'Type',
-                  'Amount',
-                  'Status',
-                  'Date',
-                  'Action',
-                ].map((h) => (
-                  <p
-                    key={h}
-                    className="text-xs font-semibold text-muted-foreground uppercase tracking-widest"
-                  >
-                    {h}
-                  </p>
-                ))}
-              </div>
-              {transactions.map((tx, i) => (
-                <motion.div
-                  key={tx.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.03 * i }}
-                  className="grid grid-cols-6 gap-4 px-5 py-4 border-b border-border last:border-0 hover:bg-secondary/40 transition-colors items-center"
+                <div
+                  className="font-mono text-xs text-muted-foreground truncate"
+                  title={tx.transaction_id}
                 >
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {tx.description}
-                  </p>
-                  <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground capitalize w-fit">
-                    {tx.type}
-                  </span>
-                  <p className="text-sm font-bold tabular-nums text-foreground">
-                    {formatCurrency(tx.amount)}
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    {tx.status === 'completed' ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                    ) : (
-                      <XCircle className="w-3.5 h-3.5 text-destructive" />
+                  {tx.transaction_id.slice(0, 8)}…
+                </div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                  {formatDate(tx.created_at)}
+                </div>
+                <div>
+                  <span
+                    className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                      tx.transaction_type === 'GOAL_CONTRIBUTION'
+                        ? 'bg-primary/10 text-primary'
+                        : tx.transaction_type === 'P2P_TRANSFER'
+                          ? 'bg-accent/10 text-accent'
+                          : 'bg-muted/20 text-muted-foreground'
                     )}
-                    <span
-                      className={`text-xs font-medium ${tx.status === 'completed' ? 'text-success' : 'text-destructive'}`}
-                    >
-                      {tx.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(tx.created_at).toLocaleDateString()}
-                  </p>
-                  <div>
-                    {tx.status === 'completed' && tx.type !== 'reversal' ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => reverseTransaction(tx.id)}
-                        className="text-destructive hover:bg-destructive/10 text-xs h-7 px-2 gap-1"
-                      >
-                        <RotateCcw className="w-3 h-3" /> Reverse
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* LEDGER */}
-      {tab === 'ledger' && (
-        <div className="space-y-3">
-          <div className="block lg:hidden space-y-3">
-            {mockLedger.map((entry, i) => (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.02 * i }}
-                className="glass rounded-2xl p-4 space-y-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(entry.created_at).toLocaleDateString()}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">
-                    {entry.account_type}
+                  >
+                    {tx.transaction_type.replace(/_/g, ' ')}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono">
-                  {entry.transaction_id}
-                </p>
-                <div className="flex justify-between pt-2 border-t border-border">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Debit</p>
-                    <p
-                      className={`text-sm font-bold ${entry.debit > 0 ? 'text-destructive' : 'text-muted-foreground'}`}
-                    >
-                      {entry.debit > 0 ? formatCurrency(entry.debit) : '—'}
-                    </p>
+                <div className="font-mono font-semibold text-foreground">
+                  {formatCurrency(tx.amount)}
+                </div>
+                <div>
+                  <div className="text-sm font-medium">
+                    {tx.counterparty_name}
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Credit</p>
-                    <p
-                      className={`text-sm font-bold ${entry.credit > 0 ? 'text-success' : 'text-muted-foreground'}`}
-                    >
-                      {entry.credit > 0 ? formatCurrency(entry.credit) : '—'}
-                    </p>
+                  <div className="text-xs text-muted-foreground">
+                    {tx.counterparty_email}
                   </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {tx.goal_name || '—'}
+                </div>
+                <div>
+                  {tx.status === 'COMPLETED' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleReverse(tx.transaction_id)}
+                      className="text-destructive hover:bg-destructive/10 h-8 px-2 gap-1 text-xs"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reverse
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             ))}
-          </div>
-
-          <div className="hidden lg:block glass rounded-2xl overflow-x-auto">
-            <div className="min-w-[800px]">
-              <div className="grid grid-cols-5 gap-4 px-5 py-3 border-b border-border bg-secondary/50">
-                {[
-                  'Date',
-                  'Account Type',
-                  'Transaction ID',
-                  'Debit',
-                  'Credit',
-                ].map((h) => (
-                  <p
-                    key={h}
-                    className="text-xs font-semibold text-muted-foreground uppercase tracking-widest"
-                  >
-                    {h}
-                  </p>
-                ))}
+            {transactions.length === 0 && (
+              <div className="px-5 py-8 text-center text-muted-foreground">
+                No transactions found.
               </div>
-              {mockLedger.map((entry, i) => (
-                <motion.div
-                  key={entry.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.02 * i }}
-                  className="grid grid-cols-5 gap-4 px-5 py-4 border-b border-border last:border-0 hover:bg-secondary/40 transition-colors items-center"
-                >
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(entry.created_at).toLocaleDateString()}
-                  </p>
-                  <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground capitalize w-fit">
-                    {entry.account_type}
-                  </span>
-                  <p className="text-xs text-muted-foreground font-mono truncate">
-                    {entry.transaction_id.slice(0, 10)}…
-                  </p>
-                  <p
-                    className={`text-sm font-bold tabular-nums ${entry.debit > 0 ? 'text-destructive' : 'text-muted-foreground/30'}`}
-                  >
-                    {entry.debit > 0 ? formatCurrency(entry.debit) : '—'}
-                  </p>
-                  <p
-                    className={`text-sm font-bold tabular-nums ${entry.credit > 0 ? 'text-success' : 'text-muted-foreground/30'}`}
-                  >
-                    {entry.credit > 0 ? formatCurrency(entry.credit) : '—'}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* SETTINGS */}
-      {tab === 'settings' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mockSettings.map((s) => (
-            <div key={s.key} className="glass rounded-2xl p-4 sm:p-5 space-y-2">
+      {/* Mobile cards */}
+      <div className="block lg:hidden space-y-3">
+        {transactions.map((tx, idx) => (
+          <motion.div
+            key={tx.transaction_id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.03 }}
+            className="glass rounded-2xl p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
               <div>
-                <Label className="text-sm font-semibold text-foreground capitalize">
-                  {s.key.replace(/_/g, ' ')}
-                </Label>
+                <p className="text-sm font-semibold text-foreground">
+                  {tx.transaction_type.replace(/_/g, ' ')}
+                </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {s.description}
+                  {formatDate(tx.created_at)}
                 </p>
               </div>
-              <Input
-                value={settingValues[s.key] ?? s.value}
-                onChange={(e) =>
-                  setSettingValues((prev) => ({
-                    ...prev,
-                    [s.key]: e.target.value,
-                  }))
-                }
-                className="bg-secondary border-border text-foreground"
-              />
+              <p className="text-lg font-bold text-foreground">
+                {formatCurrency(tx.amount)}
+              </p>
             </div>
-          ))}
-          <div className="md:col-span-2">
-            <Button
-              variant="hero"
-              onClick={handleSaveSettings}
-              className="gap-2 w-full sm:w-auto"
-            >
-              {saved ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4" /> Saved!
-                </>
-              ) : (
-                'Save Settings'
+            <div className="border-t border-border pt-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Counterparty</span>
+                <span className="font-medium text-foreground">
+                  {tx.counterparty_name}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm mt-1">
+                <span className="text-muted-foreground">Email</span>
+                <span className="font-medium text-foreground">
+                  {tx.counterparty_email}
+                </span>
+              </div>
+              {tx.goal_name && (
+                <div className="flex justify-between text-sm mt-1">
+                  <span className="text-muted-foreground">Goal</span>
+                  <span className="font-medium text-foreground">
+                    {tx.goal_name}
+                  </span>
+                </div>
               )}
-            </Button>
+            </div>
+            {tx.status === 'COMPLETED' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleReverse(tx.transaction_id)}
+                className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+              >
+                <RotateCcw className="w-3 h-3" /> Reverse Transaction
+              </Button>
+            )}
+          </motion.div>
+        ))}
+        {transactions.length === 0 && (
+          <div className="glass rounded-2xl p-8 text-center text-muted-foreground">
+            No transactions found.
           </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-8 pt-4 border-t border-border">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={!hasPrev || isFetching}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage + 1} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={!hasNext || isFetching}
+          >
+            Next <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
         </div>
       )}
     </div>

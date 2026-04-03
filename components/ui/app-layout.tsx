@@ -13,8 +13,10 @@ import {
   QrCode,
   History,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { LogoutConfirmDialog } from './logout-confirm-dialog';
+import { useUserRole } from '@/hooks/api/useUserRole';
 
 // Navigation items used in both mobile bottom nav and desktop sidebar
 const mainNavItems = [
@@ -31,8 +33,11 @@ const secondaryNavItems = [
   { icon: History, label: 'History', path: '/history' },
 ];
 
+const thirdNavItems = [{ icon: Shield, label: 'Admin', path: '/admin' }];
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { isAdmin } = useUserRole();
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -100,6 +105,31 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <span className="text-sm font-medium">{label}</span>
               </button>
             ))}
+
+            {isAdmin && (
+              <>
+                <div className="h-px bg-border my-4" />
+
+                {/* Secondary actions (scan, qr, history) */}
+                {thirdNavItems.map(({ icon: Icon, label, path }) => (
+                  <button
+                    key={path}
+                    onClick={() => router.push(path)}
+                    className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+                  ${
+                    isActive(path)
+                      ? 'gradient-primary text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  }
+                `}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-sm font-medium">{label}</span>
+                  </button>
+                ))}
+              </>
+            )}
           </nav>
 
           {/* Optional bottom section (user info / notifications) */}
