@@ -25,7 +25,7 @@ export const usePiggyGoalsByUserIdAndStatus = (status: string) => {
   const token = session?.accessToken;
 
   return useQuery({
-    queryKey: ['piggy-goals', 'status', status],
+    queryKey: ['piggy-goals-status'],
     queryFn: () => piggyService.getAllByUserIdAndPiggyStatus(status),
     enabled: !!token && !!status,
     staleTime: 5 * 60 * 1000,
@@ -74,12 +74,11 @@ export const useUpdatePiggyPublic = () => {
         is_public: data.isPublic,
       }),
     onSuccess: (_, variables) => {
-      // Invalidate the specific piggy goal query to refresh the detail page
       queryClient.invalidateQueries({
         queryKey: piggyKeys.byAccount(variables.accountNumber),
       });
-      // Also invalidate the list if you want the list to reflect the change
       queryClient.invalidateQueries({ queryKey: piggyKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['piggy-goals-status'] });
     },
   });
 };
