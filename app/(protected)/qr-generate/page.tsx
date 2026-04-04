@@ -378,14 +378,46 @@ export default function QRGenerator() {
                         ? `${selectedGoal.name} `
                         : 'Select a goal'}
                   </span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  {activeGoals.map((g) => {
+                    if (g.id === selectedGoalId && g.is_public) {
+                      return (
+                        <div
+                          key={g.id}
+                          className="flex items-center gap-1.5 mt-0.5"
+                        >
+                          <span
+                            className={`inline-flex  items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20`}
+                          >
+                            <Globe className="w-2.5 h-2.5" />
+                            Public
+                          </span>
+                        </div>
+                      );
+                    }
+                    if (g.id === selectedGoalId && !g.is_public) {
+                      return (
+                        <div
+                          key={g.id}
+                          className="flex items-center gap-1.5 mt-0.5"
+                        >
+                          <span
+                            className={`inline-flex  items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20`}
+                          >
+                            <LockKeyhole className="w-2.5 h-2.5" />
+                            Private
+                          </span>
+                        </div>
+                      );
+                    }
+                  })}
+                  {/* <div className="flex items-center gap-1.5 mt-0.5">
                     <span
                       className={`inline-flex  items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20`}
                     >
                       <Globe className="w-2.5 h-2.5" />
                       Public
                     </span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* KHQR Network Badge */}
