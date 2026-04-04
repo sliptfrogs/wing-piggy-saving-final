@@ -67,7 +67,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           {/* Main navigation */}
-          <nav className="flex-1 px-3 py-6  space-y-1">
+          <nav className="flex-1 px-3 py-6 space-y-1">
             {mainNavItems.map(({ icon: Icon, label, path }) => (
               <button
                 key={path}
@@ -110,20 +110,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {isAdmin && (
               <>
                 <div className="h-px bg-border my-4" />
-
-                {/* Secondary actions (scan, qr, history) */}
                 {thirdNavItems.map(({ icon: Icon, label, path }) => (
                   <button
                     key={path}
                     onClick={() => router.push(path)}
                     className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-                  ${
-                    isActive(path)
-                      ? 'gradient-primary text-primary-foreground shadow-md'
-                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                  }
-                `}
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+                      ${
+                        isActive(path)
+                          ? 'gradient-primary text-primary-foreground shadow-md'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      }
+                    `}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="text-sm font-medium">{label}</span>
@@ -133,7 +131,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             )}
           </nav>
 
-          {/* Optional bottom section (user info / notifications) */}
+          {/* Bottom section (sign out) */}
           <div>
             <div className="px-3 py-4 border-t !rounded-none border-border">
               <button
@@ -154,10 +152,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* ================== MAIN CONTENT AREA ================== */}
-      <div className="flex-1  flex flex-col md:ml-64 lg:ml-72 min-h-screen">
+      <div className="flex-1 flex flex-col md:ml-64 lg:ml-72 min-h-screen">
         {/* Header – visible on all screens */}
-        <header className="sticky !rounded-none top-0 z-30 glass-strong px-4 py-3  flex items-center justify-between border-b border-border">
-          <div className="flex  items-center gap-2 md:hidden">
+        <header className="sticky !rounded-none top-0 z-30 glass-strong px-4 py-3 flex items-center justify-between border-b border-border">
+          <div className="flex items-center gap-2 md:hidden">
             {/* Mobile logo (visible only on small screens) */}
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
               <PiggyBank className="w-4 h-4 text-primary-foreground" />
@@ -178,7 +176,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </button>
               <button
                 onClick={() => router.push('/history')}
-                className={`${pathname === '/history' ? 'border-b border-primary' : ''} p-2  hover:bg-secondary transition-colors`}
+                className={`${pathname === '/history' ? 'border-b border-primary' : ''} p-2 hover:bg-secondary transition-colors`}
               >
                 <History className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -189,7 +187,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               onClick={() => router.push('/notifications')}
               className={`${pathname === '/notifications' ? 'border-b border-primary md:border-none md:rounded-lg md:bg-secondary' : ''} relative md:rounded-lg hover:bg-secondary transition-colors`}
             >
-              {/* FIX: inner button replaced with div to avoid nesting */}
               <div className="relative w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
@@ -199,6 +196,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   {unreadCount}
                 </span>
               )}
+            </button>
+
+            {/* ➕ Added sign out button (visible only on mobile) */}
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="md:hidden p-2 hover:bg-secondary rounded-xl transition-colors text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         </header>
