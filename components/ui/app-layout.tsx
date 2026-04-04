@@ -14,6 +14,7 @@ import {
   History,
   LogOut,
   Shield,
+  BellRing,
 } from 'lucide-react';
 import { LogoutConfirmDialog } from './logout-confirm-dialog';
 import { useUserRole } from '@/hooks/api/useUserRole';
@@ -23,6 +24,7 @@ const mainNavItems = [
   { icon: Home, label: 'Home', path: '/dashboard' },
   { icon: PiggyBank, label: 'Piggy', path: '/piggy' },
   { icon: ArrowLeftRight, label: 'Transfer', path: '/transfer' },
+  { icon: BellRing, label: 'Notification', path: '/notifications' },
 ];
 
 // Additional actions that appear in desktop sidebar (and mobile header)
